@@ -471,7 +471,8 @@ async def botni_ishga_tushur():
     await app.initialize()
     await app.start()
     await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
-    await app.start_webhook(listen="0.0.0.0", port=8080, url_path="", webhook_url="https://telegram-bot-dwl4.onrender.com/webhook")
+    await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
+    await app.run_polling()  # fallback polling
 
     while True:  # 💤 Replitni ishlashda ushlab turadi
         await asyncio.sleep(1)
