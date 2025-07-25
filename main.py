@@ -470,7 +470,8 @@ async def botni_ishga_tushur():
     print("✅ Bot ishga tushdi...")
     await app.initialize()
     await app.start()
-    await app.updater.start_polling()
+    await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
+    await app.start_webhook(listen="0.0.0.0", port=8080, url_path="", webhook_url="https://telegram-bot-dwl4.onrender.com/webhook")
 
     while True:  # 💤 Replitni ishlashda ushlab turadi
         await asyncio.sleep(1)
