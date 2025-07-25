@@ -61,18 +61,6 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     msg_id = update.message.message_id
 
-# Reklama yoki inline bot orqali kelgan xabarni aniqlash
-if message.via_bot:
-    try:
-        await message.delete()
-        await message.chat.send_message(
-            f"⚠️ @{message.from_user.username or message.from_user.id}, sizning reklama xabaringiz o‘chirildi!",
-            reply_to_message_id=message.message_id
-        )
-        return
-    except:
-        pass
-
     if user.id in WHITELIST or (user.username and user.username in WHITELIST):
         return
 
