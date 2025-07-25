@@ -30,7 +30,7 @@ async def is_admin(update: Update) -> bool:
     member = await chat.get_member(user.id)
     return member.status in ("administrator", "creator")
 
-TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
+TOKEN = os.getenv("TOKEN") or "7395328408:AAEirdBTA3Glp9SaRJhZUeee4FjUzRSD354"
 
 WHITELIST = [165553982, "Yunus1995"]
 MAJBUR_LIMIT = 10
