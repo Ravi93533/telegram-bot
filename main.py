@@ -471,7 +471,6 @@ async def botni_ishga_tushur():
     await app.initialize()
     await app.start()
     await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
-    await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
     await app.run_polling()  # fallback polling
 
     while True:  # 💤 Replitni ishlashda ushlab turadi
@@ -481,7 +480,7 @@ async def botni_ishga_tushur():
 
 if __name__ == "__main__":
     start_web()
-    asyncio.get_event_loop().run_until_complete(botni_ishga_tushur())
+    asyncio.run(botni_ishga_tushur())
 
 
 # 🔁 Tugmalar orqali foydalanuvchini blokdan chiqarish
