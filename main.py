@@ -10,7 +10,7 @@ def home():
 
 @app_flask.route("/webhook", methods=["POST"])
 def webhook():
-    return "Webhook OK!"
+    return "OK", 200
     return "Bot ishlayapti!"
 
 def run_web():
@@ -476,9 +476,6 @@ async def botni_ishga_tushur():
     await app.initialize()
     await app.start()
     await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
-
-    while True:  # 💤 Replitni ishlashda ushlab turadi
-        await asyncio.sleep(1)
 
 
 
