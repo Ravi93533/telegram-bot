@@ -8,11 +8,6 @@ app_flask = Flask(__name__)
 def home():
     return "Bot ishlayapti!"
 
-@app_flask.route("/webhook", methods=["POST"])
-def webhook():
-    return "OK", 200
-    return "Bot ishlayapti!"
-
 def run_web():
     app_flask.run(host="0.0.0.0", port=8080)
 
@@ -475,13 +470,16 @@ async def botni_ishga_tushur():
     print("✅ Bot ishga tushdi...")
     await app.initialize()
     await app.start()
-    await app.bot.set_webhook("https://telegram-bot-dwl4.onrender.com/webhook")
+    await app.updater.start_polling()
+
+    while True:  # 💤 Replitni ishlashda ushlab turadi
+        await asyncio.sleep(1)
 
 
 
 if __name__ == "__main__":
     start_web()
-    asyncio.run(botni_ishga_tushur())
+    asyncio.get_event_loop().run_until_complete(botni_ishga_tushur())
 
 
 # 🔁 Tugmalar orqali foydalanuvchini blokdan chiqarish
