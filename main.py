@@ -20,6 +20,8 @@ from telegram.ext import (CallbackQueryHandler, ApplicationBuilder,
                           ContextTypes, ChatMemberHandler)
 import re
 import os
+
+TOKEN = os.getenv("TOKEN")
 import time
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
