@@ -33,6 +33,7 @@ async def is_admin(update: Update) -> bool:
         user = update.message.from_user
         member = await update.get_bot().get_chat_member(KANAL_USERNAME, user.id)
         return member.status in ["member", "creator", "administrator"]
+        TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
     except:
         return False
 
