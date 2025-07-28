@@ -29,23 +29,6 @@ async def is_admin(update: Update) -> bool:
     user = update.effective_user
     member = await chat.get_member(user.id)
     return member.status in ("administrator", "creator")
-
-TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
-
-WHITELIST = [165553982, "Yunus1995"]
-MAJBUR_LIMIT = 10
-RUXSAT_USER_IDS = set()
-MAJBUR_USERS = {}
-TUN_REJIMI = False
-KANAL_USERNAME = None
-FOYDALANUVCHI_HISOBI = {}
-BLOK_VAQTLARI = {}  # Foydalanuvchi ID -> blok tugash vaqti
-BLOK_MUDDATI = 300  # 5 daqiqa sekundlarda
-
-async def kanal_tekshir(update: Update):
-    global KANAL_USERNAME
-    if not KANAL_USERNAME:
-        return True
     try:
         user = update.message.from_user
         member = await update.get_bot().get_chat_member(KANAL_USERNAME, user.id)
@@ -65,6 +48,8 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if TUN_REJIMI:
+        if await is_admin(update):
+            return
         await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
         return
 
