@@ -126,42 +126,19 @@ async def id_berish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     user = update.message.from_user
     await update.message.reply_text(
-        f"🆔 {user.first_name}, sizning Telegram ID’ingiz: {user.id}",
-        parse_mode="Markdown")
-
-
-# 🧩 Interaktiv majburiy odam qo‘shish menyusi
-
-
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def majbur(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global MAJBUR_USERS
-    MAJBUR_USERS.clear()
-    keyboard = [[
-        InlineKeyboardButton(str(i), callback_data=f"majbur_{i}")
-        for i in range(5, 30, 5)
-    ],
-                [
-                    InlineKeyboardButton(str(i), callback_data=f"majbur_{i}")
-                    for i in range(30, 55, 5)
-                ],
-                [
-                    InlineKeyboardButton(str(i), callback_data=f"majbur_{i}")
-                    for i in range(60, 110, 10)
-                ],
-                [
-                    InlineKeyboardButton("❌ BEKOR QILISH ❌",
-                                         callback_data="majbur_cancel")
-                ]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
         "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
-
-
-
-
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def majbur_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global MAJBUR_LIMIT
     query = update.callback_query
@@ -219,113 +196,89 @@ async def majbur_tekshir_callback(update: Update,
 
 async def majburoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global MAJBUR_USERS, MAJBUR_LIMIT
-    MAJBUR_LIMIT = 0
-    for user_id in list(MAJBUR_USERS.keys()):
-        try:
-            await context.bot.restrict_chat_member(
-                chat_id=update.effective_chat.id,
-                user_id=user_id,
-                permissions=ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_send_polls=True,
-                    can_send_other_messages=True,
-                    can_add_web_page_previews=True,
-                    can_invite_users=True
-                )
-            )
-        except:
-            continue
-    MAJBUR_USERS.clear()
-    await update.message.reply_text("✅ Majburiy odam qo‘shish funksiyasi o‘chirildi va barcha foydalanuvchilar yozishdan chiqarildi.")
-
-
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def kanal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text(
-            f"📢 Kanalga a’zo bo‘lish majburiy: {KANAL_USERNAME}")
-
-
-# ✅ /kanaloff
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def kanaloff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-    await update.message.reply_text("🚫 Kanalga a’zo bo‘lish talabi o‘chirildi."
-                                    )
-
-
-# ✅ /ruxsat
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def ruxsat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    if update.message.reply_to_message:
-        user_id = update.message.reply_to_message.from_user.id
-        RUXSAT_USER_IDS.add(user_id)
-        await update.message.reply_text("✅ Ruxsat berildi.")
-
-
-# ✅ /top
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Hali hech kim odam qo‘shmagan.")
-        return
-    sorted_users = sorted(FOYDALANUVCHI_HISOBI.items(),
-                          key=lambda x: x[1],
-                          reverse=True)[:10]
-    msg = "🏆 TOP 10 odam qo‘shganlar:\n"
-    for uid, count in sorted_users:
-        msg += f"{uid}: {count} ta odam qo‘shgan.\n"
-    await update.message.reply_text(msg)
-
-
-# ✅ /count
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def count(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     count = FOYDALANUVCHI_HISOBI.get(user_id, 0)
-    await update.message.reply_text(f"📈 Siz {count} ta odam qo‘shgansiz.")
-
-
-# ✅ /replycount
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.reply_to_message:
         uid = update.message.reply_to_message.from_user.id
         count = FOYDALANUVCHI_HISOBI.get(uid, 0)
-        await update.message.reply_text(
-            f"📈 U foydalanuvchi {count} ta odam qo‘shgan.")
-
-
-# ✅ /cleangroup
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def cleangroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    FOYDALANUVCHI_HISOBI.clear()
-    await update.message.reply_text("🧹 Barcha hisoblar tozalandi.")
-
-
-# ✅ /cleanuser
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("🧽 Foydalanuvchi hisob tozalandi.")
-
-
-# ✅ /tun
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
     await update.message.reply_text(
-        "🌙 Tun rejimi yoqildi. Endi barcha xabarlar o‘chiriladi.")
-
-
-# ✅ /tunoff
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def tunoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-    await update.message.reply_text("🌤 Tun rejimi o‘chirildi.")
-
-
-# ✅ Guruhga qo‘shilganlar hisobini yuritish
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def on_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.chat_member.new_chat_member.status == "member":
         user_id = update.chat_member.from_user.id
@@ -346,26 +299,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        "<b>Salom👋</b>\n"
-        "Men reklamalarni, ssilkalani guruhlarda <b>o‘chirib</b> <b>beraman</b>, profilingiz <b>ID</b> gizni aniqlab beraman, guruxingizga majbur odam qo'shib beraman va majbur kanalingizga a'zo qildiraman va boshqa ko'plab yordamlar beraman 👨🏻‍✈\n\n"
-        "Bot komandalari <b>qo'llanmasi</b> 👉 /help\n\n"
-        "Faqat Ishlashim uchun guruhingizga qo‘shib, <b>ADMIN</b> <b>berishingiz</b> <b>kerak</b> 🙂\n\n"
-        "Murojaat uchun👉 @Devona0107",
-        parse_mode="HTML"
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
-
-
-# ✅ /users komandasi — foydalanuvchilar sonini ko‘rsatadi
 async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return
-    await update.message.reply_text(f"📊 Botdan foydalangan foydalanuvchilar soni: {len(FOYDALANUVCHILAR)} ta")
-
-
-# 🟢 Botni ishga tushirish
-
-
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     user = query.from_user
@@ -415,44 +358,10 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🔹 <b>/replycount</b> - Ответ қилинган фойдаланувчи неча одам қўшганини кўрсатади.\n"
         "🔹 <b>/cleanuser</b> - Ответ қилинган фойдаланувчи ҳисоби 0 қилинади.\n"
     )
-    await update.message.reply_text(text, parse_mode="HTML")
-
-
-app = ApplicationBuilder().token(TOKEN).build()
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("users", users))
-app.add_handler(CommandHandler("help", help))
-app.add_handler(CommandHandler("id", id_berish))
-app.add_handler(CommandHandler("majbur", majbur))
-app.add_handler(CommandHandler("majburoff", majburoff))
-app.add_handler(CommandHandler("kanal", kanal))
-app.add_handler(CommandHandler("kanaloff", kanaloff))
-app.add_handler(CommandHandler("ruxsat", ruxsat))
-app.add_handler(CommandHandler("top", top))
-app.add_handler(CommandHandler("count", count))
-app.add_handler(CommandHandler("replycount", replycount))
-app.add_handler(CommandHandler("cleangroup", cleangroup))
-app.add_handler(CommandHandler("cleanuser", cleanuser))
-app.add_handler(CommandHandler("tun", tun))
-app.add_handler(CommandHandler("tunoff", tunoff))
-app.add_handler(CallbackQueryHandler(majbur_callback, pattern="^majbur_"))
-app.add_handler(
-    CallbackQueryHandler(majbur_tekshir_callback,
-                         pattern="^(odam_qoshdim|ruxsat_berish)$"))
-app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
-
-app.add_handler(
-    MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
-app.add_handler(
-    MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
-app.add_handler(
-    MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_aniqlash))
-app.add_handler(
-    ChatMemberHandler(on_chat_member, ChatMemberHandler.CHAT_MEMBER))
-
-
-# 🔒 Faqat private chat uchun komandalar menyusi
+    await update.message.reply_text(
+        "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 async def set_commands():
     await app.bot.set_my_commands(commands=[
         BotCommand("help", "Bot qo'llanmasi"),
