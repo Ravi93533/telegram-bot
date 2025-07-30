@@ -77,7 +77,6 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
-    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
             reply_markup=reply_markup)
         return
 
@@ -98,7 +97,6 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⚠️ Guruhda yozish uchun {MAJBUR_LIMIT} ta odam qo‘shishingiz kerak! Siz 5 daqiqa davomida yozishni cheklangansiz.",
-    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
             reply_markup=reply_markup
         )
         return
@@ -108,7 +106,8 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
-    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]]))
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+    )
 # ✅ Guruhga kirgan yoki chiqqan foydalanuvchilar xabarini o‘chirish
 async def welcome_goodbye(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
@@ -370,7 +369,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Men reklamalarni, ssilkalani guruhlarda o‘chirib beraman, profilingiz ID gizni aniqlab beraman, guruxingizga majbur odam qo'shib beraman va majbur kanalingizga a'zo qildiraman va boshqa ko'plab yordamlar beraman 👨🏻‍✈\n\n"
         "Bot komandalari qo'llanmasi 👉 /help\n"
         "Faqat Ishlashim uchun guruhingizga qo‘shib, admin berishingiz kerak 🙂\n\n"
-        "Murojaat uchun👉 @Devona0107",
+        "Murojaat uchun👉 @Devona1995",
         reply_markup=reply_markup
     )
 
