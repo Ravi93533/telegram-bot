@@ -41,6 +41,7 @@ KANAL_USERNAME = None
 FOYDALANUVCHI_HISOBI = {}
 BLOK_VAQTLARI = {}  # Foydalanuvchi ID -> blok tugash vaqti
 BLOK_MUDDATI = 300  # 5 daqiqa sekundlarda
+FOYDALANUVCHILAR = set()  # Bot foydalanuvchilari
 
 async def kanal_tekshir(update: Update):
     global KANAL_USERNAME
@@ -359,6 +360,7 @@ async def on_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ✅ /start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    FOYDALANUVCHILAR.add(update.effective_user.id)
     keyboard = [[
         InlineKeyboardButton("➕ Guruhga qo‘shish",
                              url=f"https://t.me/{context.bot.username}?startgroup=start")
@@ -373,6 +375,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup,
         parse_mode="HTML"
     )
+
+
+
+# ✅ /users komandasi — foydalanuvchilar sonini ko‘rsatadi
+async def users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await is_admin(update):
+        return
+    await update.message.reply_text(f"📊 Botdan foydalangan foydalanuvchilar soni: {len(FOYDALANUVCHILAR)} ta")
 
 
 # 🟢 Botni ishga tushirish
@@ -433,6 +443,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app = ApplicationBuilder().token(TOKEN).build()
 
 app.add_handler(CommandHandler("start", start))
+app.add_handler(CommandHandler("users", users))
 app.add_handler(CommandHandler("help", help))
 app.add_handler(CommandHandler("id", id_berish))
 app.add_handler(CommandHandler("majbur", majbur))
