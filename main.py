@@ -364,8 +364,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
         "Salom👋\n"
-        "Men reklamalarni, ssilkalani guruhlarda o‘chirib beraman 👨🏻‍✈\n\n"
-        "Ishlashim uchun guruhingizga qo‘shib, admin berishingiz kerak 😄",
+        "Men reklamalarni, ssilkalani guruhlarda o‘chirib beraman, profilingiz ID gizni aniqlab beraman, guruxingizga majbur odam qo'shib beraman va majbur kanalingizga a'zo qildiraman va boshqa ko'plab yordamlar beraman 👨🏻‍✈\n\n"
+        "Bot komandalari qo'llanmasi 👉 /help
+        "Faqat Ishlashim uchun guruhingizga qo‘shib, admin berishingiz kerak 🙂",
+        "Murojaat uchun👉 @Devona1995",
         reply_markup=reply_markup
     )
 
