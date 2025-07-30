@@ -113,7 +113,6 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
             ]),
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
     )
 # ✅ Guruhga kirgan yoki chiqqan foydalanuvchilar xabarini o‘chirish
 async def welcome_goodbye(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -159,7 +158,6 @@ async def majbur(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
         "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇 Qo‘shish shart emas - /majburoff",
-        reply_markup=reply_markup)
 
 
 
@@ -378,7 +376,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Bot komandalari <b>qo'llanmasi</b> 👉 /help\n\n"
         "Faqat Ishlashim uchun guruhingizga qo‘shib, <b>ADMIN</b> <b>berishingiz</b> <b>kerak</b> 🙂\n\n"
         "Murojaat uchun👉 @Devona0107",
-        reply_markup=reply_markup,
         parse_mode="HTML"
     )
 
