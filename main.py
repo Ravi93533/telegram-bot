@@ -354,6 +354,22 @@ async def on_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
             MAJBUR_USERS[user_id] = MAJBUR_USERS.get(user_id, 0) + 1
 
 
+
+# ✅ /start komandasi
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[
+        InlineKeyboardButton("➕ Guruhga qo‘shish",
+                             url=f"https://t.me/{context.bot.username}?startgroup=start")
+    ]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "Salom👋\n"
+        "Men reklamalarni, ssilkalani guruhlarda o‘chirib beraman 👨🏻‍✈\n\n"
+        "Ishlashim uchun guruhingizga qo‘shib, admin berishingiz kerak 😄",
+        reply_markup=reply_markup
+    )
+
+
 # 🟢 Botni ishga tushirish
 
 
@@ -411,6 +427,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 app = ApplicationBuilder().token(TOKEN).build()
 
+app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("help", help))
 app.add_handler(CommandHandler("id", id_berish))
 app.add_handler(CommandHandler("majbur", majbur))
