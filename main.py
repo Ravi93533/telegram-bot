@@ -370,7 +370,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Bot komandalari <b>qo'llanmasi</b> 👉 /help\n\n"
         "Faqat Ishlashim uchun guruhingizga qo‘shib, <b>ADMIN</b> <b>berishingiz</b> <b>kerak</b> 🙂\n\n"
         "Murojaat uchun👉 @Devona0107",
-        reply_markup=reply_markup
+        reply_markup=reply_markup,
         parse_mode="HTML"
     )
 
