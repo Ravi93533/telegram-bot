@@ -93,7 +93,10 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         BLOK_VAQTLARI[user.id] = hozir + BLOK_MUDDATI
         await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-        keyboard = [[InlineKeyboardButton("✅ Odam qo‘shdim", callback_data="odam_qoshdim")]]
+        keyboard = [
+    [InlineKeyboardButton("✅ Odam qo‘shdim", callback_data="odam_qoshdim")],
+    [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
             chat_id=chat_id,
@@ -107,6 +110,9 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=chat_id,
             text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+            ]),
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
     )
 # ✅ Guruhga kirgan yoki chiqqan foydalanuvchilar xabarini o‘chirish
