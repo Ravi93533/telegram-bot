@@ -245,11 +245,6 @@ async def majburoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def kanal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global KANAL_USERNAME
-    if context.args:
-        KANAL_USERNAME = context.args[0]
         await update.message.reply_text(
             f"📢 Kanalga a’zo bo‘lish majburiy: {KANAL_USERNAME}")
 
@@ -257,10 +252,6 @@ async def kanal(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ✅ /kanaloff
 async def kanaloff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global KANAL_USERNAME
-    KANAL_USERNAME = None
     await update.message.reply_text("🚫 Kanalga a’zo bo‘lish talabi o‘chirildi."
                                     )
 
@@ -279,9 +270,6 @@ async def ruxsat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ✅ /top
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    if not FOYDALANUVCHI_HISOBI:
         await update.message.reply_text("⛔ Hali hech kim odam qo‘shmagan.")
         return
     sorted_users = sorted(FOYDALANUVCHI_HISOBI.items(),
@@ -321,21 +309,12 @@ async def cleangroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ✅ /cleanuser
 async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    if update.message.reply_to_message:
-        uid = update.message.reply_to_message.from_user.id
-        FOYDALANUVCHI_HISOBI[uid] = 0
         await update.message.reply_text("🧽 Foydalanuvchi hisob tozalandi.")
 
 
 # ✅ /tun
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global TUN_REJIMI
-    TUN_REJIMI = True
     await update.message.reply_text(
         "🌙 Tun rejimi yoqildi. Endi barcha xabarlar o‘chiriladi.")
 
@@ -343,10 +322,6 @@ async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ✅ /tunoff
 async def tunoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
-        await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
-        return
-    global TUN_REJIMI
-    TUN_REJIMI = False
     await update.message.reply_text("🌤 Tun rejimi o‘chirildi.")
 
 
