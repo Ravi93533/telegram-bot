@@ -50,12 +50,8 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=update.effective_chat.id,
                         text=f"⚠️ {update.effective_user.first_name}, guruhda so'kinish taqiqlangan. Iltimos, odobli bo‘ling!"
                     )
-                except:
-                    pass
                 break
-    except Exception as e:
-        print(f"So'kinish filtrda xatolik: {e}")
-# 🔒 Foydalanuvchi adminmi, tekshirish
+  # 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
     user = update.effective_user
