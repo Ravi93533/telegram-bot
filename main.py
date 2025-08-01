@@ -24,7 +24,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
 
 # ✅ So'kinish va uyatsiz so'zlarni aniqlash va o'chirish
-UYAT_SOZLAR = ["am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
+UYAT_SOZLAR = [
+    "am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
     "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
     "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxxiy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't",
     "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay",
@@ -36,23 +37,32 @@ UYAT_SOZLAR = ["am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biy
     "онангниами", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
     "сикиш", "сикишиш", "соска", "сука", "ташак", "ташақ", "тошок", "тошоқ", "хароми", "ҳароми", "ҳороми", "қотақ",
     "қотақхор", "қўтақ", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами",
-    "буйингди оми", "буйингни ами", "буйиндиоми", "буйнами", "бийиндиами", "ски", "xuy", "хуй"]
+    "буйингди оми", "буйингни ами", "буйиндиоми", "буйнами", "бийиндиами", "ски", "ттн"
+]
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
-        try:    
-        return
+    try:
+        if not update.message or not update.message.text:
+            return
         text = update.message.text.lower()
-    for soz in UYAT_SOZLAR:
-        if soz in text:
-            print(f"So'kinish topildi: {soz}")
-            await update.message.delete()
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
+        for soz in UYAT_SOZLAR:
+            if soz in text:
+                await update.message.delete()
+                try:
+                    await context.bot.send_message(
+                        chat_id=update.effective_chat.id,
                         text=f"⚠️ {update.effective_user.first_name}, guruhda so'kinish taqiqlangan. Iltimos, odobli bo‘ling!"
                     )
+                except:
+                    pass
                 break
-  # 🔒 Foydalanuvchi adminmi, tekshirish
+    except Exception as e:
+        print(f"So'kinish filtrda xatolik: {e}")
+
+
+
+
+# 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
     user = update.effective_user
@@ -235,8 +245,7 @@ app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
 
 app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
-app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_aniqlash))
-app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), sokinish_filtri))
+app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_va_soz_filtri))
 
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
@@ -277,3 +286,60 @@ async def botni_ishga_tushur():
 if __name__ == "__main__":
     start_web()
     asyncio.get_event_loop().run_until_complete(botni_ishga_tushur())
+
+
+
+# ✅ Reklama va so‘kinish filtrini birlashtirilgan holda tekshiruvchi handler
+async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user = update.message.from_user
+        text = update.message.text
+        chat_id = update.message.chat_id
+        msg_id = update.message.message_id
+
+        if not text or not user:
+            return
+
+        # 1. WHITELIST tekshiruv
+        if user.id in WHITELIST or (user.username and user.username in WHITELIST):
+            return
+
+        # 2. TUN REJIMI
+        if TUN_REJIMI:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 3. KANALGA A’ZO TEKSHIRISH
+        if not await kanal_tekshir(update):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
+                reply_markup=reply_markup)
+            return
+
+        # 4. REKLAMA so‘zlari
+        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+            )
+            return
+
+        # 5. SO‘KINISH SO‘ZLARI
+        text_lower = text.lower()
+        for soz in UYAT_SOZLAR:
+            if soz in text_lower:
+                await update.message.delete()
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {user.first_name}, guruhda so‘kinish taqiqlangan. Iltimos, odobli bo‘ling!"
+                )
+                break
+
+    except Exception as e:
+        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
