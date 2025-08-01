@@ -114,6 +114,10 @@ UYAT_SOZLAR = [
     "toshok",
     "toshoq",
     "xaromi",
+    "xuy",
+    "xuyplot",
+    "xoyyam",
+    "xuyam",
     "xoromi",
     "ам",
     "амлатта",
@@ -184,6 +188,10 @@ UYAT_SOZLAR = [
     "қўтақхўр",
     "ҳароми",
     "ҳороми",
+    "хуй",
+    "хуйна",
+    "хуйплот",
+    "хоййам",
 ]
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
