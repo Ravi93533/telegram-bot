@@ -24,8 +24,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
 
 # ✅ So'kinish va uyatsiz so'zlarni aniqlash va o'chirish
-UYAT_SOZLAR = [
-    "am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
+UYAT_SOZLAR = ["am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
     "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
     "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxxiy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't",
     "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay",
@@ -37,20 +36,18 @@ UYAT_SOZLAR = [
     "онангниами", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
     "сикиш", "сикишиш", "соска", "сука", "ташак", "ташақ", "тошок", "тошоқ", "хароми", "ҳароми", "ҳороми", "қотақ",
     "қотақхор", "қўтақ", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами",
-    "буйингди оми", "буйингни ами", "буйиндиоми", "буйнами", "бийиндиами", "ски", "xuy", "хуй"
-]
+    "буйингди оми", "буйингни ами", "буйиндиоми", "буйнами", "бийиндиами", "ски", "xuy", "хуй"]
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        if not update.message or not update.message.text:
+    if not update.message or not update.message.text:
             return
         text = update.message.text.lower()
-        for soz in UYAT_SOZLAR:
-            if soz in text:
-                await update.message.delete()
-                try:
-                    await context.bot.send_message(
-                        chat_id=update.effective_chat.id,
+    for soz in UYAT_SOZLAR:
+        if soz in text:
+            print(f"So'kinish topildi: {soz}")
+            await update.message.delete()
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
                         text=f"⚠️ {update.effective_user.first_name}, guruhda so'kinish taqiqlangan. Iltimos, odobli bo‘ling!"
                     )
                 except:
@@ -58,10 +55,6 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 break
     except Exception as e:
         print(f"So'kinish filtrda xatolik: {e}")
-
-
-
-
 # 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
