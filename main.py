@@ -40,7 +40,8 @@ UYAT_SOZLAR = ["am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biy
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
-            return
+        try:    
+        return
         text = update.message.text.lower()
     for soz in UYAT_SOZLAR:
         if soz in text:
