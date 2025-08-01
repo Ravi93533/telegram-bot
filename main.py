@@ -232,6 +232,61 @@ import asyncio
 
 app = ApplicationBuilder().token(TOKEN).build()
 
+async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user = update.message.from_user
+        text = update.message.text
+        chat_id = update.message.chat_id
+        msg_id = update.message.message_id
+
+        if not text or not user:
+            return
+
+        # 1. WHITELIST tekshiruv
+        if user.id in WHITELIST or (user.username and user.username in WHITELIST):
+            return
+
+        # 2. TUN REJIMI
+        if TUN_REJIMI:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 3. KANALGA A’ZO TEKSHIRISH
+        if not await kanal_tekshir(update):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
+                reply_markup=reply_markup)
+            return
+
+        # 4. REKLAMA so‘zlari
+        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+            )
+            return
+
+        # 5. SO‘KINISH SO‘ZLARI
+        text_lower = text.lower()
+        for soz in UYAT_SOZLAR:
+            if soz in text_lower:
+                await update.message.delete()
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {user.first_name}, guruhda so‘kinish taqiqlangan. Iltimos, odobli bo‘ling!"
+                )
+                break
+
+    except Exception as e:
+        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
+
+
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("users", users))
 app.add_handler(CommandHandler("help", help))
@@ -290,56 +345,3 @@ if __name__ == "__main__":
 
 
 # ✅ Reklama va so‘kinish filtrini birlashtirilgan holda tekshiruvchi handler
-async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        user = update.message.from_user
-        text = update.message.text
-        chat_id = update.message.chat_id
-        msg_id = update.message.message_id
-
-        if not text or not user:
-            return
-
-        # 1. WHITELIST tekshiruv
-        if user.id in WHITELIST or (user.username and user.username in WHITELIST):
-            return
-
-        # 2. TUN REJIMI
-        if TUN_REJIMI:
-            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            return
-
-        # 3. KANALGA A’ZO TEKSHIRISH
-        if not await kanal_tekshir(update):
-            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
-                reply_markup=reply_markup)
-            return
-
-        # 4. REKLAMA so‘zlari
-        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
-            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
-            )
-            return
-
-        # 5. SO‘KINISH SO‘ZLARI
-        text_lower = text.lower()
-        for soz in UYAT_SOZLAR:
-            if soz in text_lower:
-                await update.message.delete()
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=f"⚠️ {user.first_name}, guruhda so‘kinish taqiqlangan. Iltimos, odobli bo‘ling!"
-                )
-                break
-
-    except Exception as e:
-        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
