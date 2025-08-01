@@ -266,7 +266,7 @@ async def ruxsat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
         return
-    if update.message.reply_to_message:
+    if update.message.reply_to_message is not None:
         user_id = update.message.reply_to_message.from_user.id
         RUXSAT_USER_IDS.add(user_id)
         await update.message.reply_text("✅ Ruxsat berildi.")
@@ -298,8 +298,8 @@ async def count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # ✅ /replycount
 async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message.reply_to_message:
-        uid = update.message.reply_to_message.from_user.id
+    if update.message.reply_to_message is not None:
+            uid = update.message.reply_to_message.from_user.id
         count = FOYDALANUVCHI_HISOBI.get(uid, 0)
         await update.message.reply_text(f"📈 U foydalanuvchi {count} ta odam qo‘shgan.")
 
@@ -318,9 +318,9 @@ async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
         return
-    if update.message.reply_to_message:
-        uid = update.message.reply_to_message.from_user.id
-        FOYDALANUVCHI_HISOBI[uid] = 0
+    if update.message.reply_to_message is not None:
+            uid = update.message.reply_to_message.from_user.id
+                FOYDALANUVCHI_HISOBI[uid] = 0
         await update.message.reply_text("🧽 Foydalanuvchi hisob tozalandi.")
 
 
