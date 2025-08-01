@@ -301,8 +301,7 @@ async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.reply_to_message:
         uid = update.message.reply_to_message.from_user.id
         count = FOYDALANUVCHI_HISOBI.get(uid, 0)
-        await update.message.reply_text(
-            f"📈 U foydalanuvchi {count} ta odam qo‘shgan.")
+        await update.message.reply_text(f"📈 U foydalanuvchi {count} ta odam qo‘shgan.")
 
 
 # ✅ /cleangroup
