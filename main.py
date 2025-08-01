@@ -299,9 +299,11 @@ async def count(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ✅ /replycount
 async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.reply_to_message is not None:
-            uid = update.message.reply_to_message.from_user.id
+        uid = update.message.reply_to_message.from_user.id
         count = FOYDALANUVCHI_HISOBI.get(uid, 0)
         await update.message.reply_text(f"📈 U foydalanuvchi {count} ta odam qo‘shgan.")
+    else:
+        await update.message.reply_text("⚠️ Iltimos, foydalanuvchining xabariga javoban yuboring.")
 
 
 # ✅ /cleangroup
