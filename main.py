@@ -27,17 +27,17 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 UYAT_SOZLAR = [
     "am", "amlatta", "amyalaq", "amyalar", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
     "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
-    "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxxiy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't",
+    "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxuy", "idin naxxuy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't",
     "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay",
     "ogzinga skay", "onagniomi", "onangniami", "pashol naxuy", "pasholnaxxuy", "pidor", "poshol naxxuy", "posholnaxxuy",
     "qanjik", "qanjiq", "qonjiq", "qotaq", "qotaqxor", "qo'taq", "qo'taqxo'r", "sik", "sikaman", "sikay", "sikalak",
     "sikish", "sikishish", "skay", "slut", "soska", "suka", "tashak", "tashaq", "toshoq", "toshok", "xaromi", "xoromi",
-    "yob", "жалап", "далбаёб", "долбоёб", "гандон", "гондон", "го", "иди нах", "идин наххий", "идиннаххуй", "кот", "котак",
-    "кут", "кутак", "кутингга", "кўт", "кўтингга", "ланати", "нах", "наххуй", "огзинга скай", "огзингаскай", "онагниоми",
-    "онангниами", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
+    "yob", "жалап", "далбаёб", "долбоёб", "гандон", "гондон", "нахуй", "иди нахуй", "идин наххуй", "идиннаххуй", "кот", "котак",
+    "кут", "кутак", "кутингга", "кўт", "кўтингга", "ланати", "нахуй", "наххуй", "огзинга скай", "огзингаскай", "онагниоми", "онагни оми",
+    "онангниами", "онангни ами", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
     "сикиш", "сикишиш", "соска", "сука", "ташак", "ташақ", "тошок", "тошоқ", "хароми", "ҳароми", "ҳороми", "қотақ",
-    "қотақхор", "қўтақ", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами",
-    "буйингди оми", "буйингни ами", "буйиндиоми", "буйнами", "бийиндиами", "ский", "хуй", "xuy", "xuyna", "skey"
+    "қотақхор", "қўтақ", "кутак", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами",
+    "буйингди оми", "буйингни ами", "буйинди оми", "буйнами", "бийинди ами", "ский", "скай", "скаман", "хуй", "xuy", "xuyna", "skey"
 ]
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
