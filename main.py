@@ -321,9 +321,11 @@ async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
         return
     if update.message.reply_to_message is not None:
-            uid = update.message.reply_to_message.from_user.id
-                FOYDALANUVCHI_HISOBI[uid] = 0
+        uid = update.message.reply_to_message.from_user.id
+        FOYDALANUVCHI_HISOBI[uid] = 0
         await update.message.reply_text("🧽 Foydalanuvchi hisob tozalandi.")
+    else:
+        await update.message.reply_text("⚠️ Iltimos, foydalanuvchining xabariga reply qilib yuboring.")
 
 
 # ✅ /tun
