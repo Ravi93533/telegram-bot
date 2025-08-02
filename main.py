@@ -66,8 +66,22 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
     user = update.effective_user
-    member = await chat.get_member(user.id)
-    return member.status in ("administrator", "creator")
+
+    try:
+        member = await chat.get_member(user.id)
+        if member.status in ("administrator", "creator"):
+            return True
+    except:
+        pass
+
+    if update.message and update.message.sender_chat:
+        try:
+            bot_member = await chat.get_member(update.message.sender_chat.id)
+            return bot_member.status == "administrator"
+        except:
+            return False
+
+    return False
 
 TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
 
