@@ -25,7 +25,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
 # ✅ So'kinish va uyatsiz so'zlarni aniqlash va o'chirish
 UYAT_SOZLAR = [
-    "am", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga", "aminga ske", "aminga sikay", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
+     "am", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga", "aminga ske", "aminga sikay", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
     "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
     "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxuy", "idin naxxuy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't", "kotinga ske", "kotinga sikay", "kotinga", "ko'tinga", "kotingga", "kotvacha",
     "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "otti qotagi", "otni qotagi", "otti qo'tag'i",
@@ -345,4 +345,3 @@ if __name__ == "__main__":
 
 
 # ✅ Reklama va so‘kinish filtrini birlashtirilgan holda tekshiruvchi handler
-
