@@ -98,9 +98,17 @@ async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user.id in WHITELIST or (user.username and user.username in WHITELIST):
         return
 
-    if TUN_REJIMI:
-        await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-        return
+# 2. TUN REJIMI (lekin adminlar va guruh egalari uchun emas)
+        if TUN_REJIMI:
+            try:
+                member = await context.bot.get_chat_member(chat_id, user.id)
+                if member.status not in ("administrator", "creator"):
+                    await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                    return
+            except:
+                # Xatolik bo‘lsa, xabarni o‘chir
+                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                return
 
     if not await kanal_tekshir(update):
         await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
