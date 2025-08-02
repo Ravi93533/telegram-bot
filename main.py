@@ -66,7 +66,7 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
 
-    # 1. Oddiy foydalanuvchini tekshirish
+    # 1. Agar oddiy foydalanuvchi mavjud bo‘lsa
     if update.effective_user:
         try:
             member = await chat.get_member(update.effective_user.id)
@@ -75,11 +75,11 @@ async def is_admin(update: Update) -> bool:
         except:
             pass
 
-    # 2. Anonim adminni tekshirish
+    # 2. Agar sender_chat (anonim admin) mavjud bo‘lsa
     if update.message and update.message.sender_chat:
         try:
-            bot_member = await chat.get_member(update.message.sender_chat.id)
-            if bot_member.status == "administrator":
+            member = await chat.get_member(update.message.sender_chat.id)
+            if member.status == "administrator":
                 return True
         except:
             pass
@@ -245,7 +245,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "📌 <b>Buyruqlar ro‘yxati</b>\n\n"
         "🔹 <b>/id</b> - Акканунтингиз ID сини аниқлайди.\n"
-        "🔹 <b>/tun</b> - Барча ёзилган хабарлар автоматик ўчирилади.\n"
+        "🔹 <b>/tun</b> - Шу дақиқадан Барча ёзилган хабарлар автоматик ўчирилади.\n"
         "🔹 <b>/tunoff</b> - Тун режими ўчирилади.\n"
         "🔹 <b>/ruxsat</b> - Ответ ёки @ орқали белгиланган одамга рухсат берилади.\n"
         "🔹 <b>/kanal @username</b> - Каналга азо бўлишга мажбурлайди.\n"
