@@ -65,21 +65,24 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
-    user = update.effective_user
 
-    try:
-        member = await chat.get_member(user.id)
-        if member.status in ("administrator", "creator"):
-            return True
-    except:
-        pass
+    # 1. Oddiy foydalanuvchini tekshirish
+    if update.effective_user:
+        try:
+            member = await chat.get_member(update.effective_user.id)
+            if member.status in ("administrator", "creator"):
+                return True
+        except:
+            pass
 
+    # 2. Anonim adminni tekshirish
     if update.message and update.message.sender_chat:
         try:
             bot_member = await chat.get_member(update.message.sender_chat.id)
-            return bot_member.status == "administrator"
+            if bot_member.status == "administrator":
+                return True
         except:
-            return False
+            pass
 
     return False
 
