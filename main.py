@@ -25,19 +25,19 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
 # ✅ So'kinish va uyatsiz so'zlarni aniqlash va o'chirish
 UYAT_SOZLAR = [
-     "am", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "amyaliman", "amyalayman", "amlatta", "aminga", "amingaske", "amingasikay", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
-    "buyingniami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
-    "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idinnaxuy", "idinnaxxuy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't", "kotingaske", "kotingasikay", "kotinga", "ko'tinga", "kotingga", "kotvacha",
-    "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "ottiqotagi", "otniqotagi", "ottiqo'tag'i",
-    "ogzingaskay", "onagniomi", "onangniami", "pasholnaxuy", "padarlanat", "lanati", "lanat", "pasholnaxxuy", "pidor", "posholnaxxuy", "posholnaxxuy", "poxxuy", "poxuy",
+     "am", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga", "aminga ske", "aminga sikay", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi",
+    "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", "dick", "dolboyob", "durak", "eblan", "fuck", "fucker",
+    "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxuy", "idin naxxuy", "isqirt", "jalap", "kal", "kot", "kotak", "ko't", "kotinga ske", "kotinga sikay", "kotinga", "ko'tinga", "kotingga", "kotvacha",
+    "ko'tak", "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "otti qotagi", "otni qotagi", "otti qo'tag'i",
+    "ogzinga skay", "onagniomi", "onangniami", "pashol naxuy", "padarlanat", "lanati", "lanat", "pasholnaxxuy", "pidor", "poshol naxxuy", "posholnaxxuy", "poxxuy", "poxuy",
     "qanjik", "qanjiq", "qonjiq", "qotaq", "qotaqxor", "qo'taq", "qo'taqxo'r", "qotagim", "kotagim", "qo'tag'im", "qotag'im", "qo'tagim", "sik", "sikaman", "sikay", "sikalak",
     "sikish", "sikishish", "skay", "slut", "soska", "suka", "tashak", "tashaq", "toshoq", "toshok", "xaromi", "xoromi",
-    "ам", "амлатта", "аминга", "амялак", "амялок", "амхўр", "амхур", "омин", "оминга", "амялиман", "амялайман", "искирт", "жалап", "далбаёб", "долбоёб", "гандон", "гондон", "нахуй", "идинахуй", "идиннаххуй", "идиннаххуй", "кот", "котак", "кутагим", "қўтағим",
-    "кут", "кутак", "кутингга", "кўт", "кўтингга", "ланати", "нахуй", "наххуй", "огзингаскай", "огзингаскай", "онагниоми", "онагниоми",
-    "онангниами", "онангниами", "огзингаскей", "огзингасикай", "отникутаги", "пашолнахуй", "пашолнаххуй", "пидор", "пошолнаххуй", "похуй", "поххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
+    "ам", "амлатта", "аминга", "амялак", "амялок", "амхўр", "амхур", "омин", "оминга", "ам ялиман", "ам ялайман", "искирт", "жалап", "далбаёб", "долбоёб", "гандон", "гондон", "нахуй", "иди нахуй", "идин наххуй", "идиннаххуй", "кот", "котак", "кутагим", "қўтағим",
+    "кут", "кутак", "кутингга", "кўт", "кўтингга", "ланати", "нахуй", "наххуй", "огзинга скай", "огзингаскай", "онагниоми", "онагни оми",
+    "онангниами", "онангни ами", "огзинга скей", "огзинга сикай", "отни кутаги", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "похуй", "поххуй", "пошолнаххуй", "секис", "сикай", "сикаман",
     "сикиш", "сикишиш", "соска", "сука", "ташак", "ташақ", "тошок", "тошоқ", "хароми", "ҳароми", "ҳороми", "қотақ", "ске", "ланат", "ланати", "падарланат",
-    "қотақхор", "қўтақ", "кутак", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "амлатта", "амялақ", "амялар", "буйингдиами",
-    "буйингдиоми", "буйингниами", "буйиндиоми", "буйнами", "бийиндиами", "ский", "скай", "сикей", "сик", "кутагим", "скаман", "хуй", "xuy", "xuyna", "skey"
+    "қотақхор", "қўтақ", "кутак", "қўтақхўр", "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами",
+    "буйингди оми", "буйингни ами", "буйинди оми", "буйнами", "бийинди ами", "ский", "скай", "сикей", "сик", "кутагим", "скаман", "хуй", "xuy", "xuyna", "skey"
 ]
 
 async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -45,12 +45,8 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not update.message or not update.message.text:
             return
         text = update.message.text.lower()
-        sozlar = re.findall(r"\w+", text)
-        print("📥 Original text:", text)
-        print("🔎 Ajratilgan so‘zlar:", sozlar)
-        for soz in sozlar:
-            if soz in UYAT_SOZLAR:
-                print("❌ Topildi va bloklanadi:", soz)
+        for soz in UYAT_SOZLAR:
+            if soz in text:
                 await update.message.delete()
                 try:
                     await context.bot.send_message(
@@ -61,9 +57,12 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     pass
                 break
     except Exception as e:
-        print(f"[Xatolik] sokinish_filtri: {e}")
+        print(f"So'kinish filtrda xatolik: {e}")
 
-# 🔒 Foydalanuvchi adminmi, tekshirish# 🔒 Foydalanuvchi adminmi, tekshirish
+
+
+
+# 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
 
@@ -268,16 +267,13 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         if not text or not user:
             return
 
-        # 1. WHITELIST tekshiruv
         if user.id in WHITELIST or (user.username and user.username in WHITELIST):
             return
 
-        # 2. TUN REJIMI
         if TUN_REJIMI:
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
-        # 3. KANALGA A’ZO TEKSHIRISH
         if not await kanal_tekshir(update):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
@@ -288,7 +284,6 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup=reply_markup)
             return
 
-        # 4. REKLAMA so‘zlari
         if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             await context.bot.send_message(
@@ -298,10 +293,12 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             )
             return
 
-        # 5. SO‘KINISH SO‘ZLARI
-        text_lower = text.lower()
-        for soz in UYAT_SOZLAR:
-            if soz in text_lower:
+        sozlar = re.findall(r"\w+", text.lower())
+        print("📥 Original text:", text)
+        print("🔎 Ajratilgan so‘zlar:", sozlar)
+        for soz in sozlar:
+            if soz in UYAT_SOZLAR:
+                print("❌ Bloklanadigan so‘z:", soz)
                 await update.message.delete()
                 await context.bot.send_message(
                     chat_id=chat_id,
@@ -310,25 +307,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 break
 
     except Exception as e:
-        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
-
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("users", users))
-app.add_handler(CommandHandler("help", help))
-app.add_handler(CommandHandler("id", id_berish))
-app.add_handler(CommandHandler("kanal", kanal))
-app.add_handler(CommandHandler("kanaloff", kanaloff))
-app.add_handler(CommandHandler("ruxsat", ruxsat))
-app.add_handler(CommandHandler("tun", lambda u, c: tun(u, c)))
-app.add_handler(CommandHandler("tunoff", lambda u, c: tunoff(u, c)))
-app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
-
-app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
-app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
-app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_va_soz_filtri))
-
-async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print(f"[Xatolik] reklama_va_soz_filtri: {e}")async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
     if not await is_admin(update):
         await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
@@ -371,4 +350,3 @@ if __name__ == "__main__":
 
 
 # ✅ Reklama va so‘kinish filtrini birlashtirilgan holda tekshiruvchi handler
-
