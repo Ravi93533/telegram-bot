@@ -46,7 +46,7 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         text = update.message.text.lower()
         for soz in UYAT_SOZLAR:
-            if re.search(rf"{re.escape(soz)}", text):
+            if soz in text:
                 await update.message.delete()
                 try:
                     await context.bot.send_message(
@@ -300,7 +300,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         # 5. SO‘KINISH SO‘ZLARI
         text_lower = text.lower()
         for soz in UYAT_SOZLAR:
-            if re.search(rf"{re.escape(soz)}", text_lower):
+            if soz in text_lower:
                 await update.message.delete()
                 await context.bot.send_message(
                     chat_id=chat_id,
