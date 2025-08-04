@@ -307,7 +307,9 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 break
 
     except Exception as e:
-        print(f"[Xatolik] reklama_va_soz_filtri: {e}")async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
+
+async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
     if not await is_admin(update):
         await update.message.reply_text("⛔ Bu komanda faqat adminlar uchun.")
