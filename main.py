@@ -46,7 +46,7 @@ async def sokinish_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         text = update.message.text.lower()
         for soz in UYAT_SOZLAR:
-            if soz in text:
+            if re.search(rf"{re.escape(soz)}", text):
                 await update.message.delete()
                 try:
                     await context.bot.send_message(
@@ -245,7 +245,7 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
         "📌 <b>Buyruqlar ro‘yxati</b>\n\n"
         "🔹 <b>/id</b> - Акканунтингиз ID сини аниқлайди.\n"
-        "🔹 <b>/tun</b> - Шу дақиқадан Барча ёзилган хабарлар автоматик ўчирилади.\n"
+        "🔹 <b>/tun</b> - Барча ёзилган хабарлар автоматик ўчирилади.\n"
         "🔹 <b>/tunoff</b> - Тун режими ўчирилади.\n"
         "🔹 <b>/ruxsat</b> - Ответ ёки @ орқали белгиланган одамга рухсат берилади.\n"
         "🔹 <b>/kanal @username</b> - Каналга азо бўлишга мажбурлайди.\n"
@@ -300,7 +300,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         # 5. SO‘KINISH SO‘ZLARI
         text_lower = text.lower()
         for soz in UYAT_SOZLAR:
-            if soz in text_lower:
+            if re.search(rf"{re.escape(soz)}", text_lower):
                 await update.message.delete()
                 await context.bot.send_message(
                     chat_id=chat_id,
