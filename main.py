@@ -229,8 +229,8 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         text = msg.text or msg.caption or ""
         entities = msg.entities or msg.caption_entities or []
 
-        # 0. FORWARD xabarlar (kanaldan)
-        if msg.forward_from_chat:
+        # 0. FORWARD xabarlar (kanaldan, odamdan, caption bilan)
+        if msg.forward_from_chat or msg.forward_sender_name:
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
@@ -250,16 +250,16 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
-                reply_markup=keyboard)
+                reply_markup=InlineKeyboardMarkup(keyboard))
             return
 
-        # 4. Yashirin ssilkalar (entities ichida)
+        # 4. Yashirin ssilka, @mention, url
         for ent in entities:
-            if ent.type == "text_link" and ("t.me" in ent.url or "telegram.me" in ent.url):
+            if ent.type in ["text_link", "url", "mention"] or "t.me" in text or "telegram.me" in text or "@" in text:
                 await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
                 return
 
-        # 5. Reklama so‘zlari text/caption ichida
+        # 5. Ochiq reklama so‘zlari
         if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
