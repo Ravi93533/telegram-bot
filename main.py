@@ -37,6 +37,17 @@ def strip_invisible_chars(s: str) -> str:
 def has_sneaky_promo(text: str) -> bool:
     if not text:
         return False
+
+def has_url_entities(msg) -> bool:
+    try:
+        ents = (msg.entities or []) + (msg.caption_entities or [])
+        for e in ents:
+            t = getattr(e, "type", None)
+            if t in ("url", "text_link", "mention"):
+                return True
+    except Exception:
+        pass
+    return False
     raw = text
     s = strip_invisible_chars(raw).lower()
 
@@ -335,6 +346,7 @@ app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
 
 app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
+app.add_handler(MessageHandler((filters.Entity("url") | filters.Entity("text_link") | filters.CaptionEntity("url") | filters.CaptionEntity("text_link") | filters.Entity("mention") | filters.CaptionEntity("text_link")), reklama_va_soz_filtri))
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_va_soz_filtri))
 app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL) & filters.CaptionRegex(".*"), reklama_va_soz_filtri))
 
