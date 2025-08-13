@@ -49,25 +49,6 @@ async def kanal_tekshir(update: Update):
     except:
         return False
 
-# Matndan faqat so'zlarni ajratib olamiz
-def matndan_sozlar_olish(matn):
-    return re.findall(r"\b\w+\b", matn.lower())
-
-# So'kinish so'zlari ro'yxati
-uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
-
-# Foydalanuvchi xabarini filtrlash
-async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        if update.message:
-            text = update.message.text
-            sozlar = matndan_sozlar_olish(text)
-            if any(soz in uyatli_sozlar for soz in sozlar):
-                await update.message.delete()
-                print(f"So'kinish topildi va o'chirildi: {text}")
-    except Exception as e:
-        print(f"[Xatolik] Filtrda: {e}")
-
 # ✅ Reklama tekshiruvi va kanalga a'zo bo'lish majburiyati
 async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
@@ -221,7 +202,63 @@ import asyncio
 
 app = ApplicationBuilder().token(TOKEN).build()
 
+
+# So'kinish so'zlari ro'yxati
+uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
+
+# Matndan faqat so'zlarni ajratib olamiz
+def matndan_sozlar_olish(matn):
+    return re.findall(r"\b\w+\b", matn.lower())
+
 async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        user = update.message.from_user
+        text = update.message.text
+        chat_id = update.message.chat_id
+        msg_id = update.message.message_id
+
+        if not text or not user:
+            return
+
+        # 1. WHITELIST tekshiruv
+        if user.id in WHITELIST or (user.username and user.username in WHITELIST):
+            return
+
+        # 2. TUN REJIMI
+        if TUN_REJIMI:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 3. KANALGA A’ZO TEKSHIRISH
+        if not await kanal_tekshir(update):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
+                reply_markup=reply_markup)
+            return
+
+        # 4. REKLAMA so‘zlari
+        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, guruhda reklama taqiqlangan.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+            )
+            return
+
+        # 5. SO‘KINISH so‘zlari
+        sozlar = matndan_sozlar_olish(text)
+        if any(soz in uyatli_sozlar for soz in sozlar):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            print(f"So'kinish topildi va o'chirildi: {text}")
+
+    except Exception as e:
+        print(f"[Xatolik] reklama_va_soz_filtri: {e}")
+
     try:
         user = update.message.from_user
         text = update.message.text
