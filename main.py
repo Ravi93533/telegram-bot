@@ -270,7 +270,7 @@ app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
 app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), reklama_va_soz_filtri))
-app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL) & filters.Caption, reklama_va_soz_filtri))
+app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO | filters.ANIMATION | filters.Document.ALL) & filters.CaptionRegex(".*"), reklama_va_soz_filtri))
 
 async def set_commands():
     await app.bot.set_my_commands(commands=[
