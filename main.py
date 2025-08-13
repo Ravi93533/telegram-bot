@@ -245,6 +245,13 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         if getattr(msg, "forward_from_chat", None) or getattr(msg, "forward_sender_name", None):
             logging.info("⛔ Forward xabar aniqlandi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, forward qilingan xabar yuborish taqiqlangan!",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+                ])
+            )
             return
 
         # 1. WHITELIST tekshiruv
@@ -277,9 +284,16 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 if url and ("t.me" in url or "telegram.me" in url):
                     logging.info("🔗 Yashirin ssilka aniqlandi — o‘chirilmoqda")
                     await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                    await context.bot.send_message(
+                        chat_id=chat_id,
+                        text=f"⚠️ {user.first_name}, yashirin ssilka yuborish taqiqlangan!",
+                        reply_markup=InlineKeyboardMarkup([
+                            [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+                        ])
+                    )
                     return
 
-        if any(x in text for x in ["t.me", "telegram.me", "@"]):
+        if any(x in text for x in ["t.me", "telegram.me", "@", "www.", "https://youtu.be"]):
             logging.info("🔗 Matnda reklama ssilka — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
