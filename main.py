@@ -220,7 +220,22 @@ def matndan_sozlar_olish(matn):
 
 
 # So‘kinish so‘zlari ro‘yxati
-uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
+uyatli_sozlar = {"am", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga", "aminga ske", "aminga sikay", 
+    "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi", "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", 
+    "dick", "dolboyob", "durak", "eblan", "fuck", "fucker", "gandon", "haromi", "horomi", "hoy", "idinnaxxuy", "idin naxuy", "idin naxxuy", 
+    "isqirt", "jalap", "kal", "kot", "kotak", "ko't", "kotinga ske", "kotinga sikay", "kotinga", "ko'tinga", "kotingga", "kotvacha", "ko'tak", 
+    "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "otti qotagi", "otni qotagi", 
+    "otti qo'tag'i", "ogzinga skay", "onagniomi", "onangniami", "pashol naxuy", "padarlanat", "lanat", "pasholnaxxuy", "pidor", 
+    "poshol naxxuy", "posholnaxxuy", "poxxuy", "poxuy", "qanjik", "qanjiq", "qonjiq", "qotaq", "qotaqxor", "qo'taq", "qo'taqxo'r", 
+    "qotagim", "kotagim", "qo'tag'im", "qotag'im", "qo'tagim", "sik", "sikaman", "sikay", "sikalak", "sikish", "sikishish", "skay", 
+    "slut", "soska", "suka", "tashak", "tashaq", "toshoq", "toshok", "xaromi", "xoromi", "ам", "амлатта", "аминга", "амялак", "амялок", "амхўр", "амхур", "омин", "оминга", "ам ялиман", "ам ялайман", "искирт", "жалап", 
+    "далбаёб", "долбоёб", "гандон", "гондон", "нахуй", "иди нахуй", "идин наххуй", "идиннаххуй", "кот", "котак", "кутагим", "қўтағим",
+    "кут", "кутак", "кутингга", "кўт", "кўтингга", "ланати", "нахуй", "наххуй", "огзинга скай", "огзингаскай", "онагниоми", "онагни оми",
+    "онангниами", "онангни ами", "огзинга скей", "огзинга сикай", "отни кутаги", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", 
+    "похуй", "поххуй", "пошолнаххуй", "секис", "сикай", "сикаман", "сикиш", "сикишиш", "соска", "сука", "ташак", "ташақ", "тошок", 
+    "тошоқ", "хароми", "ҳароми", "ҳороми", "қотақ", "ске", "ланат", "ланати", "падарланат", "қотақхор", "қўтақ", "кутак", "қўтақхўр", 
+    "қанжик", "қанжиқ", "қонжиқ", "ам", "амлатта", "амялақ", "амялар", "буйингди ами", "буйингди оми", "буйингни ами", "буйинди оми", 
+    "буйнами", "бийинди ами", "ский", "скай", "сикей", "сик", "кутагим", "скаман", "хуй", "xuy", "xuyna", "skey"}
 
 # Matndan so‘zlarni ajratish
 def matndan_sozlar_olish(matn):
