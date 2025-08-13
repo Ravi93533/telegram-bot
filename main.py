@@ -13,22 +13,19 @@ def run_web():
 def start_web():
     threading.Thread(target=run_web).start()
 
-from telegram import Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions,
+    InlineKeyboardButton, InlineKeyboardMarkup
+)
 from telegram.ext import (
-    CallbackQueryHandler,
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    ChatMemberHandler,
-    filters,
+    CallbackQueryHandler, ApplicationBuilder, CommandHandler, MessageHandler,
+    ContextTypes, ChatMemberHandler, filters
 )
 import re
 import os
 import asyncio
 
 # ===================== Global holat =====================
-# 🔒 Foydalanuvchi adminmi, tekshirish
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
     user = update.effective_user
@@ -40,7 +37,7 @@ TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
 WHITELIST = [165553982, "Yunus1995"]
 TUN_REJIMI = False
 KANAL_USERNAME = None
-FOYDALANUVCHILAR = set()  # Bot foydalanuvchilari
+FOYDALANUVCHILAR = set()
 
 # ===================== Yordamchi funksiyalar =====================
 ZERO_WIDTH = "".join([
@@ -54,28 +51,31 @@ def strip_invisible_chars(s: str) -> str:
         return s
     return s.translate({ord(ch): None for ch in ZERO_WIDTH})
 
-def has_embedded_tg_link(text: str) -> bool:
+def has_embedded_tg_link_or_channel(text: str) -> bool:
     if not text:
         return False
     s = strip_invisible_chars(text).lower()
     tg_core = r"t\s*[^a-z0-9]*\.?\s*[^a-z0-9]*me\s*[/\\]"
-    if re.search(tg_core, s, re.IGNORECASE):
+    if re.search(tg_core, s):
         return True
     tg_telegram_me = r"tele\s*gram\s*[^a-z0-9]*\.?\s*[^a-z0-9]*me\s*[/\\]"
     tg_dog = r"tele\s*gram\s*[^a-z0-9]*\.?\s*[^a-z0-9]*dog\s*[/\\]"
-    if re.search(tg_telegram_me, s, re.IGNORECASE) or re.search(tg_dog, s, re.IGNORECASE):
+    if re.search(tg_telegram_me, s) or re.search(tg_dog, s):
         return True
-    if re.search(r"(join\s*chat|joinchat|\+[a-z0-9_\-]{10,})", s, re.IGNORECASE):
+    if re.search(r"(join\s*chat|joinchat|\+[a-z0-9_\-]{10,})", s):
         return True
-    if re.search(r"tg\s*[:][/][/]\s*join", s, re.IGNORECASE):
+    if re.search(r"tg\s*[:][/][/]\s*join", s):
         return True
-    if re.search(r"t\s*(?:dot|\.)\s*me\s*[/\\]", s, re.IGNORECASE):
+    if re.search(r"t\s*(?:dot|\.)\s*me\s*[/\\]", s):
         return True
-    if re.search(r"\btme\s*[/\\]", s, re.IGNORECASE):
+    if re.search(r"\btme\s*[/\\]", s):
         return True
-    if re.search(r"(^|[^a-z0-9_])@[a-z0-9_]{4,}", s, re.IGNORECASE):
+    if re.search(r"(^|[^a-z0-9_])@[a-z0-9_]{4,}", s):
         return True
-    if re.search(r"(https?[:][/][/]|www\.)", s, re.IGNORECASE):
+    if re.search(r"(https?[:][/][/]|www\.)", s):
+        return True
+    # Uppercase_with_underscore channel names
+    if re.search(r"\b[A-Z_]{5,}\b", text):
         return True
     return False
 
@@ -90,6 +90,11 @@ async def kanal_tekshir(update: Update):
     except Exception:
         return False
 
+def warning_markup(bot_username):
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{bot_username}?startgroup=start")
+    ]])
+
 # ===================== Handlers =====================
 async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -100,8 +105,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         text = msg.text or msg.caption or ""
         chat_id = msg.chat_id
         msg_id = msg.message_id
-        if not text or not user:
-            return
+
         if user.id in WHITELIST or (user.username and user.username in WHITELIST):
             return
         if TUN_REJIMI:
@@ -109,19 +113,45 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             return
         if not await kanal_tekshir(update):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]])
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
-                reply_markup=reply_markup)
+                reply_markup=warning_markup(context.bot.username)
+            )
             return
-        if has_embedded_tg_link(text):
+
+        # Forwarded channel/group check
+        if msg.forward_from_chat:
+            if msg.forward_from_chat.type in ["channel", "supergroup", "group"]:
+                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {user.first_name}, forward qilingan kanal/guruh postlari taqiqlangan.",
+                    reply_markup=warning_markup(context.bot.username)
+                )
+                return
+
+        # Forward signature check
+        if msg.forward_signature:
+            if has_embedded_tg_link_or_channel(msg.forward_signature):
+                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {user.first_name}, reklama taqiqlangan.",
+                    reply_markup=warning_markup(context.bot.username)
+                )
+                return
+
+        # Text & caption check
+        if has_embedded_tg_link_or_channel(text):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=f"⚠️ {user.first_name}, guruhda reklama va havolalar taqiqlangan.",
+                reply_markup=warning_markup(context.bot.username)
             )
             return
+
     except Exception as e:
         print(f"[Xatolik] reklama_va_soz_filtri: {e}")
 
@@ -166,17 +196,10 @@ async def ruxsat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     FOYDALANUVCHILAR.add(update.effective_user.id)
-    keyboard = [[
-        InlineKeyboardButton(
-            "➕ Guruhga qo‘shish",
-            url=f"https://t.me/{context.bot.username}?startgroup=start"
-        )
-    ]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
         "<b>Salom👋</b>\n"
         "Men reklamalarni, ssilkalani guruhlarda <b>o‘chirib</b> <b>beraman</b>...",
-        reply_markup=reply_markup,
+        reply_markup=warning_markup(context.bot.username),
         parse_mode="HTML",
     )
 
@@ -195,23 +218,23 @@ async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         member = await context.bot.get_chat_member(KANAL_USERNAME, user.id)
         if member.status in ["member", "administrator", "creator"]:
-            await context.bot.restrict_chat_member(
-                chat_id=query.message.chat.id,
-                user_id=user.id,
-                permissions=ChatPermissions(
-                    can_send_messages=True,
-                    can_send_media_messages=True,
-                    can_send_polls=True,
-                    can_send_other_messages=True,
-                    can_add_web_page_previews=True,
-                    can_invite_users=True
-                ),
-            )
             await query.edit_message_text("✅ A’zo bo‘lganingiz tasdiqlandi.")
         else:
             await query.edit_message_text("❌ Hali kanalga a’zo emassiz.")
     except Exception:
         await query.edit_message_text("⚠️ Tekshirishda xatolik.")
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "📌 <b>Buyruqlar ro‘yxati</b>\n\n"
+        "/id - ID ni ko‘rsatadi\n"
+        "/tun - Tun rejimini yoqish\n"
+        "/tunoff - Tun rejimini o‘chirish\n"
+        "/kanal @username - Majburiy kanal belgilash\n"
+        "/kanaloff - Kanal majburiyatini o‘chirish\n"
+        "/ruxsat - Foydalanuvchiga ruxsat berish\n"
+    )
+    await update.message.reply_text(text, parse_mode="HTML", reply_markup=warning_markup(context.bot.username))
 
 # ===================== App =====================
 app = ApplicationBuilder().token(TOKEN).build()
@@ -222,6 +245,7 @@ app.add_handler(CommandHandler("id", id_berish))
 app.add_handler(CommandHandler("kanal", kanal))
 app.add_handler(CommandHandler("kanaloff", kanaloff))
 app.add_handler(CommandHandler("ruxsat", ruxsat))
+app.add_handler(CommandHandler("help", help_command))
 
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
