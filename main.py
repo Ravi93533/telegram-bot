@@ -210,7 +210,69 @@ uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
 def matndan_sozlar_olish(matn):
     return re.findall(r"\b\w+\b", matn.lower())
 
+
+# So‘kinish so‘zlari ro‘yxati
+uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
+
+# Matndan so‘zlarni ajratish
+def matndan_sozlar_olish(matn):
+    return re.findall(r"\b\w+\b", matn.lower())
+
+# Reklama va so‘kinish birgalikda filtr
 async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        msg = update.message
+        user = msg.from_user
+        chat_id = msg.chat_id
+        msg_id = msg.message_id
+
+        text = msg.text or msg.caption or ""
+        entities = msg.entities or msg.caption_entities or []
+
+        # 0. FORWARD xabarlar (kanaldan)
+        if msg.forward_from_chat:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 1. WHITELIST tekshiruv
+        if user.id in WHITELIST or (user.username and user.username in WHITELIST):
+            return
+
+        # 2. TUN REJIMI
+        if TUN_REJIMI:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 3. Kanalga a’zolik tekshiruvi
+        if not await kanal_tekshir(update):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
+                reply_markup=keyboard)
+            return
+
+        # 4. Yashirin ssilkalar (entities ichida)
+        for ent in entities:
+            if ent.type == "text_link" and ("t.me" in ent.url or "telegram.me" in ent.url):
+                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                return
+
+        # 5. Reklama so‘zlari text/caption ichida
+        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+        # 6. So‘kinish so‘zlari
+        sozlar = matndan_sozlar_olish(text)
+        if any(soz in uyatli_sozlar for soz in sozlar):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            return
+
+    except Exception as e:
+        print(f"[Xatolik] Filtrda: {e}")
+
     try:
         user = update.message.from_user
         text = update.message.text
@@ -218,16 +280,6 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         msg_id = update.message.message_id
 
         if not text or not user:
-            return
-
-        # 0. FORWARD xabarlar (reklama uzatmasi)
-        if update.message.forward_from_chat:
-            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=f"⚠️ {user.first_name}, forward qilingan reklama xabarlar taqiqlangan.",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
-            )
             return
 
         # 1. WHITELIST tekshiruv
@@ -250,20 +302,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup=reply_markup)
             return
 
-        # 4. REKLAMA so‘zlari (oddiy text va yashirin havolalar)
-
-        # Havola sifatida yashirin t.me yoki telegram.me (entity orqali)
-        entities = update.message.entities or []
-        for ent in entities:
-            if ent.type == "text_link" and ("t.me" in ent.url or "telegram.me" in ent.url):
-                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text=f"⚠️ {user.first_name}, yashirin ssilka orqali reklama taqiqlangan.",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
-                )
-                return
-
+        # 4. REKLAMA so‘zlari
         if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             await context.bot.send_message(
