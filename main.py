@@ -411,9 +411,9 @@ media_filters = (
     filters.PHOTO |
     filters.VIDEO |
     filters.Document.ALL |
-    filters.Animation.ALL |
-    filters.Voice.ALL |
-    filters.VideoNote.ALL
+    filters.ANIMATION |
+    filters.VOICE |
+    filters.VIDEO_NOTE
 )
 app.add_handler(MessageHandler(media_filters & (~filters.COMMAND), reklama_va_soz_filtri))
 
