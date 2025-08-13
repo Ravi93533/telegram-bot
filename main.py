@@ -288,6 +288,13 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         if text and re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             logging.info("🔗 Ochiq reklama topildi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, reklama yuborish taqiqlangan!",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+            ])
+            )
             return
 
         # 6. So‘kinish
@@ -295,6 +302,13 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         if any(soz in uyatli_sozlar for soz in sozlar):
             logging.info("🤬 So‘kinish so‘zi topildi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, guruhda so‘kinish taqiqlangan!",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+            ])
+            )
             return
 
     except Exception as e:
