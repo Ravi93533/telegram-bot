@@ -23,6 +23,8 @@ import time
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
 # ===================== Reklama/forward aniqlash yordamchilari =====================
+
+# ===================== Reklama/forward aniqlash yordamchilari (FIXED) =====================
 ZERO_WIDTH = "".join([
     "\u200b", "\u200c", "\u200d", "\u200e", "\u200f",
     "\u202a", "\u202b", "\u202c", "\u202d", "\u202e",
@@ -34,10 +36,6 @@ def strip_invisible_chars(s: str) -> str:
         return s
     return s.translate({ord(ch): None for ch in ZERO_WIDTH})
 
-def has_sneaky_promo(text: str) -> bool:
-    if not text:
-        return False
-
 def has_url_entities(msg) -> bool:
     try:
         ents = (msg.entities or []) + (msg.caption_entities or [])
@@ -48,6 +46,10 @@ def has_url_entities(msg) -> bool:
     except Exception:
         pass
     return False
+
+def has_sneaky_promo(text: str) -> bool:
+    if not text:
+        return False
     raw = text
     s = strip_invisible_chars(raw).lower()
 
@@ -78,12 +80,10 @@ def has_url_entities(msg) -> bool:
         return True
 
     # Common promo phrases
-    if re.search(r"(obuna|obunachi|kanalga\s+qo['’`]shiling|kanalimizga|guruhimizga|подписк|канал|группа)", s):
+    if re.search(r"(obuna|obunachi|kanalga\s+qo['’`]?shiling|kanalimizga|guruhimizga|подписк|канал|группа)", s):
         return True
 
     return False
-
-
 
 
 # 🔒 Foydalanuvchi adminmi, tekshirish
@@ -320,7 +320,17 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             )
             return
 
-        # 6) Matn yoki caption ichida promo
+        # 6) URL/text_link entity bo'lsa (aniq)
+        if has_url_entities(msg):
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, havola taqiqlangan.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+            )
+            return
+
+        # 7) Matn yoki caption ichida promo
         if has_sneaky_promo(text):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             await context.bot.send_message(
