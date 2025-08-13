@@ -240,7 +240,20 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup=reply_markup)
             return
 
-        # 4. REKLAMA so‘zlari
+        # 4. REKLAMA so‘zlari (oddiy text va yashirin havolalar)
+
+        # Havola sifatida yashirin t.me yoki telegram.me (entity orqali)
+        entities = update.message.entities or []
+        for ent in entities:
+            if ent.type == "text_link" and ("t.me" in ent.url or "telegram.me" in ent.url):
+                await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text=f"⚠️ {user.first_name}, yashirin ssilka orqali reklama taqiqlangan.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+                )
+                return
+
         if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             await context.bot.send_message(
