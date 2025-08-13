@@ -22,6 +22,14 @@ import os
 import time
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
 
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+
+
 
 
 # 🔒 Foydalanuvchi adminmi, tekshirish
@@ -229,30 +237,30 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         text = msg.text or msg.caption or ""
         entities = msg.entities or msg.caption_entities or []
 
-        print(f"🔍 Keldi: user={user.id}, text={text}")
-        print(f"📎 Forward? => from_chat={getattr(msg, 'forward_from_chat', None)}, sender_name={getattr(msg, 'forward_sender_name', None)}")
-        print(f"🔗 Entities: {entities}")
+        logging.info(f"🔍 Keldi: user={user.id}, text={text}")
+        logging.info(f"📎 Forward? => from_chat={getattr(msg, 'forward_from_chat', None)}, sender_name={getattr(msg, 'forward_sender_name', None)}")
+        logging.info(f"🔗 Entities: {entities}")
 
         # 0. FORWARD xabarlar (kanaldan, odamdan, caption bilan)
         if getattr(msg, "forward_from_chat", None) or getattr(msg, "forward_sender_name", None):
-            print("⛔ Forward xabar aniqlandi — o‘chirilmoqda")
+            logging.info("⛔ Forward xabar aniqlandi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
         # 1. WHITELIST tekshiruv
         if user.id in WHITELIST or (user.username and user.username in WHITELIST):
-            print("✅ WHITELIST: foydalanuvchi o‘tkazib yuborildi")
+            logging.info("✅ WHITELIST: foydalanuvchi o‘tkazib yuborildi")
             return
 
         # 2. TUN REJIMI
         if TUN_REJIMI:
-            print("🌙 Tun rejimi: xabar o‘chirilmoqda")
+            logging.info("🌙 Tun rejimi: xabar o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
         # 3. Kanalga a’zolik tekshiruvi
         if not await kanal_tekshir(update):
-            print("📢 Kanalga a’zolik yo‘q — xabar o‘chirilmoqda")
+            logging.info("📢 Kanalga a’zolik yo‘q — xabar o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             keyboard = [[InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")]]
             await context.bot.send_message(
@@ -263,33 +271,33 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
 
         # 4. Yashirin ssilkalar
         for ent in entities:
-            print(f"🔍 Entity: {ent}")
+            logging.info(f"🔍 Entity: {ent}")
             if ent.type in ["text_link", "url", "mention"]:
                 if hasattr(ent, "url") and ("t.me" in ent.url or "telegram.me" in ent.url):
-                    print("🔗 Yashirin ssilka aniqlandi — o‘chirilmoqda")
+                    logging.info("🔗 Yashirin ssilka aniqlandi — o‘chirilmoqda")
                     await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
                     return
 
         if "t.me" in text or "telegram.me" in text or "@" in text:
-            print("🔗 Matnda reklama ssilka — o‘chirilmoqda")
+            logging.info("🔗 Matnda reklama ssilka — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
         # 5. Ochiq reklama so‘zlari
         if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
-            print("🔗 Ochiq reklama topildi — o‘chirilmoqda")
+            logging.info("🔗 Ochiq reklama topildi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
         # 6. So‘kinish
         sozlar = matndan_sozlar_olish(text)
         if any(soz in uyatli_sozlar for soz in sozlar):
-            print("🤬 So‘kinish so‘zi topildi — o‘chirilmoqda")
+            logging.info("🤬 So‘kinish so‘zi topildi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
     except Exception as e:
-        print(f"[Xatolik] Filtrda: {e}")
+        logging.info(f"[Xatolik] Filtrda: {e}")
 
     try:
         user = update.message.from_user
