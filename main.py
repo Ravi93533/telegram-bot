@@ -406,7 +406,15 @@ app.add_handler(CallbackQueryHandler(kanal_callback, pattern="^kanal_azo$"))
 
 app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_goodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, welcome_goodbye))
-media_filters = (filters.TEXT | filters.PHOTO | filters.VIDEO | filters.DOCUMENT | filters.ANIMATION | filters.VOICE | filters.VIDEO_NOTE)
+media_filters = (
+    filters.TEXT |
+    filters.PHOTO |
+    filters.VIDEO |
+    filters.Document.ALL |
+    filters.Animation.ALL |
+    filters.Voice.ALL |
+    filters.VideoNote.ALL
+)
 app.add_handler(MessageHandler(media_filters & (~filters.COMMAND), reklama_va_soz_filtri))
 
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
