@@ -269,22 +269,23 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
                 reply_markup=InlineKeyboardMarkup(keyboard))
             return
 
-        # 4. Yashirin ssilkalar
+        # 4. Yashirin ssilkalar va textdagi ssilkalar
         for ent in entities:
             logging.info(f"🔍 Entity: {ent}")
             if ent.type in ["text_link", "url", "mention"]:
-                if hasattr(ent, "url") and ("t.me" in ent.url or "telegram.me" in ent.url):
+                url = getattr(ent, "url", "")
+                if url and ("t.me" in url or "telegram.me" in url):
                     logging.info("🔗 Yashirin ssilka aniqlandi — o‘chirilmoqda")
                     await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
                     return
 
-        if "t.me" in text or "telegram.me" in text or "@" in text:
+        if any(x in text for x in ["t.me", "telegram.me", "@"]):
             logging.info("🔗 Matnda reklama ssilka — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
 
         # 5. Ochiq reklama so‘zlari
-        if re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
+        if text and re.search(r"(http|www\.|t\.me/|@|reklama|reklam)", text, re.IGNORECASE):
             logging.info("🔗 Ochiq reklama topildi — o‘chirilmoqda")
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
             return
@@ -297,7 +298,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             return
 
     except Exception as e:
-        logging.info(f"[Xatolik] Filtrda: {e}")
+        logging.error(f"[Xatolik] Filtrda: {e}")
 
     try:
         user = update.message.from_user
