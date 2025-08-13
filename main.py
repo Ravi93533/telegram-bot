@@ -220,6 +220,16 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         if not text or not user:
             return
 
+        # 0. FORWARD xabarlar (reklama uzatmasi)
+        if update.message.forward_from_chat:
+            await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=f"⚠️ {user.first_name}, forward qilingan reklama xabarlar taqiqlangan.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]])
+            )
+            return
+
         # 1. WHITELIST tekshiruv
         if user.id in WHITELIST or (user.username and user.username in WHITELIST):
             return
