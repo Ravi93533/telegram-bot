@@ -49,6 +49,25 @@ async def kanal_tekshir(update: Update):
     except:
         return False
 
+# Matndan faqat so'zlarni ajratib olamiz
+def matndan_sozlar_olish(matn):
+    return re.findall(r"\b\w+\b", matn.lower())
+
+# So'kinish so'zlari ro'yxati
+uyatli_sozlar = {"am", "qotaq", "kot", "tashak"}
+
+# Foydalanuvchi xabarini filtrlash
+async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        if update.message:
+            text = update.message.text
+            sozlar = matndan_sozlar_olish(text)
+            if any(soz in uyatli_sozlar for soz in sozlar):
+                await update.message.delete()
+                print(f"So'kinish topildi va o'chirildi: {text}")
+    except Exception as e:
+        print(f"[Xatolik] Filtrda: {e}")
+
 # ✅ Reklama tekshiruvi va kanalga a'zo bo'lish majburiyati
 async def reklama_aniqlash(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global TUN_REJIMI
