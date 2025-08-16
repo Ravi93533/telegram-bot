@@ -79,14 +79,14 @@ BLOCK_PERMS = ChatPermissions(
 
 # So'kinish lug'ati
 UYATLI_SOZLAR = {"am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisizlar?", "amsan", "ammisan?", "amlar", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga", "aminga ske", "aminga sikay", "asshole", "bastard", "biyundiami", "bitch", "blyat", "buynami", "buyingdi omi", "buyingni ami", "buyundiomi", "dalbayob", "damn", "debil", 
-    "dick", "dolboyob", "durak", "eblan", "fuck", "fakyou", "fuckyou", "foxisha", "fohisha", "fucker", "gandon", "gandonlar", "haromi", "haromilar", "horomi", "hoy", "idinnaxxuy", "idin naxuy", "idin naxxuy", 
+    "dick", "dolboyob", "durak", "eblan", "fuck", "fakyou", "fuckyou", "foxisha", "fohisha", "fucker", "gandon", "gandonmisan", "gandonmisan?", "gandonlar", "blya", "haromi", "huy", "haromilar", "horomi", "idinnaxxuy", "idinaxxuy", "idin naxuy", "idin naxxuy", 
     "isqirt", "jalap", "kal", "kot", "kotmislar", "kotmislar?", "kotmisizlar", "kotmisizlar?", "kotlar", "kotak", "kotmisan", "kotmisan?", "kotsan", "ko'tsan", "ko'tmisan", "ko't", "ko'tlar", "kotinga ske", "kotinga sikay", "kotinga", "ko'tinga", "kotingga", "kotvacha", "ko'tak", 
-    "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "otti qotagi", "otni qotagi", "horomilar", 
+    "lanati", "lax", "motherfucker", "mudak", "naxxuy", "og'zingaskay", "og'zinga skay", "ogzingaskay", "otti qotagi", "otni qotagi", "horomilar", "huyimga", "huygami",
     "otti qo'tag'i", "ogzinga skay", "onagniomi", "onangniami", "pashol naxuy", "padarlanat", "lanat", "pasholnaxxuy", "pidor", 
     "poshol naxxuy", "posholnaxxuy", "poxxuy", "poxuy", "qanjik", "qanjiq", "qonjiq", "qotaq", "qotaqxor", "qo'taq", "qo'taqxo'r", 
     "qotagim", "kotagim", "qo'tag'im", "qotoqlar", "qo'toqlar", "qotag'im", "qotoglar", "qo'tog'lar", "qotagim", "sik", "sikaman", "skasizmi", "sikasizmi", "sikay", "sikalak", "sikish", "sikishish", "skay", 
     "slut", "soska", "suka", "tashak", "tashaq", "toshoq", "toshok", "xaromi", "xoramilar", "xoromi", "xoromilar", "ам", "аммисан", "аммисан?", "амсан", "амлар", "амлатта", "аминга", "амялак", "амялок", "амхўр", "амхур", "омин", "оминга", "ам ялиман", "ам ялайман", "искирт", "жалап", 
-    "далбаёб", "долбоёб", "гандон", "гондон", "нахуй", "иди нахуй", "идин наххуй", "идиннаххуй", "кот", "котак", "кутагим", "қўтағим",
+    "далбаёб", "долбоёб", "гандон", "гандонлар", "гандонмисан", "гандонмисан?", "нахуй", "иди нахуй", "иди наххуй", "идинахуй", "идинаххуй", "идин наххуй", "идиннаххуй", "кот", "котак", "кутагим", "қўтағим",
     "кут", "кутмисан", "кутмислар", "кутмисизлар", "кутмисизлар?", "кутмисан?", "кутсан", "кўтсан", "кутак", "кутлар", "кутингга", "кўт", "кўтлар", "кўтингга", "ланати", "нахуй", "наххуй", "огзинга скай", "огзингаскай", "онагниоми", "онагни оми",
     "онангниами", "онангни ами", "огзинга скей", "огзинга сикай", "отни кутаги", "пашол нахуй", "пашолнаххуй", "пидор", "пошол наххуй", "кўтмислар", "кўтмислар?", "кўтмисизлар?", 
     "похуй", "поххуй", "пошолнаххуй", "секис", "сикасиз", "сикай", "сикаман", "сикиш", "сикишиш", "сикишамиз", "скишамиз", "сикишаман", "скишаман", "сикишамизми?", "скишамизми?", "сикасизми", "скасизми", "скасизми?", "сикасизми?", "скасиз", "соска", "сука", "ташак", "ташақ", "тошок", 
@@ -170,9 +170,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]]
     await update.effective_message.reply_text(
         "<b>САЛОМ👋</b>\n"
-        "Мен барча рекламаларни, ссилкалани ва кирди чиқди хабарларни гуруҳлардан <b>ўчириб</b> <b>тураман</b>\n\n"
+        "Мен барча рекламаларни, ссилкалани ва кирди чиқди хабарларни ҳамда ёрдамчи ботлардан келган рекламаларни гуруҳлардан <b>ўчириб</b> <b>тураман</b>\n\n"
         "Профилингиз <b>ID</b> гизни аниқлаб бераман\n\n"
-        "Мажбурий гурухга одам қўштираман ва каналга аъзо бўлдираман ➕\n\n"
+        "Мажбурий гурухга одам қўштираман ва каналга аъзо бўлдираман(қўшмаса ёзолмайди) ➕\n\n"
         "18+ уятли сўзларни ўчираман ва бошқа кўплаб ёрдамлар бераман 👨🏻‍✈\n\n"
         "Бот командалари <b>қўлланмаси</b> 👉 /help\n\n"
         "Фақат Ишлашим учун гуруҳингизга қўшиб, <b>ADMIN</b> <b>беришингиз</b> <b>керак</b> 🙂\n\n"
@@ -723,3 +723,4 @@ async def on_my_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception:
             pass
+
