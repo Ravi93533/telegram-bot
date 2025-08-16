@@ -1,3 +1,15 @@
+from telegram import Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.constants import ChatMemberStatus
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
+
+def admin_add_link(bot_username: str) -> str:
+    rights = [
+        'delete_messages','restrict_members','invite_users',
+        'pin_messages','manage_topics','manage_video_chats','manage_chat'
+    ]
+    rights_param = '+'.join(rights)
+    return f"https://t.me/{bot_username}?startgroup&admin={rights_param}"
+
 import threading
 import os
 import re
@@ -6,15 +18,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from flask import Flask
-
-from telegram import (
-    Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions,
-    InlineKeyboardButton, InlineKeyboardMarkup
-)
-from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler,
-    ContextTypes, filters
-)
 
 # ----------- Small keep-alive web server -----------
 app_flask = Flask(__name__)
@@ -139,7 +142,7 @@ def matndan_sozlar_olish(matn: str):
 
 def add_to_group_kb(bot_username: str):
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{bot_username}?startgroup=start")]]
+        [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(bot_username))]]
     )
 
 def has_suspicious_buttons(msg) -> bool:
@@ -164,7 +167,7 @@ def has_suspicious_buttons(msg) -> bool:
 
 # ----------- Commands -----------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    kb = [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]]
+    kb = [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]]
     await update.effective_message.reply_text(
         "<b>САЛОМ👋</b>\n"
         "Мен барча рекламаларни, ссилкалани ва кирди чиқди хабарларни гуруҳлардан <b>ўчириб</b> <b>тураман</b>\n\n"
@@ -448,7 +451,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             pass
         kb = [
             [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")],
-            [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")]
+            [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
         ]
         await context.bot.send_message(
             chat_id=msg.chat_id,
@@ -627,7 +630,7 @@ async def majbur_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
         [InlineKeyboardButton("✅ Odam qo‘shdim", callback_data=f"check_added:{uid}")],
         [InlineKeyboardButton("🎟 Imtiyoz berish", callback_data=f"grant:{uid}")],
-        [InlineKeyboardButton("➕ Guruhga qo‘shish", url=f"https://t.me/{context.bot.username}?startgroup=start")],
+        [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))],
         [InlineKeyboardButton("⏳ 3 daqiqaga bloklandi", callback_data="noop")]
     ]
     await context.bot.send_message(
@@ -697,3 +700,26 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+async def on_my_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        st = update.my_chat_member.new_chat_member.status
+    except Exception:
+        return
+    if st in (ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED):
+        me = await context.bot.get_me()
+        kb = InlineKeyboardMarkup([[InlineKeyboardButton(
+            '🔐 Botni admin qilish', url=admin_add_link(me.username)
+        )]])
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=(
+                    '⚠️ Bot hozircha *admin emas*.\n'
+                    'Iltimos, pastdagi tugma orqali admin qiling, shunda barcha funksiyalar to\'liq ishlaydi.'
+                ),
+                reply_markup=kb,
+                parse_mode='Markdown'
+            )
+        except Exception:
+            pass
