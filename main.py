@@ -101,31 +101,44 @@ SUSPECT_DOMAINS = {"cattea", "gamee", "hamster", "notcoin", "tgme", "t.me/gamee"
 # ----------- Helpers -----------
 async def is_admin(update: Update) -> bool:
     chat = update.effective_chat
+    msg = update.effective_message
     user = update.effective_user
-    if not (chat and user):
+    if not chat:
         return False
     try:
-        member = await update.get_bot().get_chat_member(chat.id, user.id)
-        return member.status in ("administrator", "creator")
+        if msg and getattr(msg, "sender_chat", None):
+            sc = msg.sender_chat
+            if sc.id == chat.id:
+                return True
+            linked_id = getattr(chat, "linked_chat_id", None)
+            if linked_id and sc.id == linked_id:
+                return True
+        if user:
+            member = await update.get_bot().get_chat_member(chat.id, user.id)
+            return member.status in ("administrator", "creator", "owner")
+        return False
     except Exception as e:
         log.warning(f"is_admin tekshiruvda xatolik: {e}")
         return False
-
 async def is_privileged_message(msg, bot) -> bool:
-    """Adminlar, creatorlar yoki guruh nomidan yozilgan (sender_chat) xabarlar uchun True."""
+    """Adminlar, creatorlar yoki guruh/linked kanal nomidan yozilgan (sender_chat) xabarlar uchun True."""
     try:
         chat = msg.chat
         user = msg.from_user
-        if getattr(msg, "sender_chat", None) and msg.sender_chat.id == chat.id:
-            return True
+        if getattr(msg, "sender_chat", None):
+            sc = msg.sender_chat
+            if sc.id == chat.id:
+                return True
+            linked_id = getattr(chat, "linked_chat_id", None)
+            if linked_id and sc.id == linked_id:
+                return True
         if user:
             member = await bot.get_chat_member(chat.id, user.id)
-            if member.status in ("administrator", "creator"):
+            if member.status in ("administrator", "creator", "owner"):
                 return True
     except Exception as e:
         log.warning(f"is_privileged_message xatolik: {e}")
     return False
-
 async def kanal_tekshir(user_id: int, bot) -> bool:
     global KANAL_USERNAME
     if not KANAL_USERNAME:
