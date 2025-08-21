@@ -786,8 +786,8 @@ async def majbur_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         return
 
-    # 5 daqiqaga blok (hozir 3 daqiqa)
-    until = datetime.now(timezone.utc) + timedelta(minutes=3)
+    # 5 daqiqaga blok (hozir 1 daqiqa)
+    until = datetime.now(timezone.utc) + timedelta(minutes=1)
     BLOK_VAQTLARI[(msg.chat_id, uid)] = until
     try:
         await context.bot.restrict_chat_member(
@@ -805,7 +805,7 @@ async def majbur_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("✅ Odam qo‘shdim", callback_data=f"check_added:{uid}")],
         [InlineKeyboardButton("🎟 Imtiyoz berish", callback_data=f"grant:{uid}")],
         [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))],
-        [InlineKeyboardButton("⏳ 3 daqiqaga bloklandi", callback_data="noop")]
+        [InlineKeyboardButton("⏳ 1 daqiqaga bloklandi", callback_data="noop")]
     ]
     await context.bot.send_message(
         chat_id=msg.chat_id,
@@ -955,3 +955,4 @@ async def broadcastpost(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     main()
+
