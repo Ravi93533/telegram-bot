@@ -135,7 +135,7 @@ BLOCK_PERMS = ChatPermissions(
 )
 
 # So'kinish lug'ati (qisqartirilgan, aslidagi ro'yxat saqlandi)
-UYATLI_SOZLAR = {am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisizlar?", "amsan", "ammisan?", "amlar", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga",
+UYATLI_SOZLAR = {"am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisizlar?", "amsan", "ammisan?", "amlar", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga",
 "aminga ske", "aminga sikay", "buyingdi ami", "buyingdi omi", "buyingni ami", "buyindi omi", "buynami", "biyindi ami", "blya", "biyundiami", "blyat", "buynami", "buyingdi omi", "buyingni ami",
 "buyundiomi", "dalbayob", "dalbayobmisan", "dalbayoblar", "dalbayobmisan?", "debil", "dolboyob", "durak", "fuck", "fakyou", "fuckyou", "foxisha", "foxishasan", "foxishamisan?", "foxishalar", "fohisha", "fohishasan", "fohishamisan?",
 "fohishalar", "gandon", "g'ar", "gandonmisan", "gandonmisan?", "gandonlar", "haromi", "huy", "haromilar", "horomi", "horomilar", "idinnaxxuy", "idinaxxuy", "idin naxuy", "idin naxxuy", "isqirt", "isqirtsan", "isqirtlar", "jalap", "jalaplar",
@@ -1078,3 +1078,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
