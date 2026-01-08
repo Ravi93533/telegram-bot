@@ -1,4 +1,3 @@
-
 from telegram import Chat, Message, Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
@@ -111,10 +110,9 @@ def start_web():
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
 
-import os, logging
-TOKEN = os.getenv("TOKEN")
-if not TOKEN:
-    raise RuntimeError("TOKEN env topilmadi. Variables ga TOKEN=bot_token qo‘ying.")
+TOKEN = os.getenv("TOKEN", "").strip()
+if not TOKEN or ":" not in TOKEN:
+    raise RuntimeError("TOKEN env topilmadi yoki format noto‘g‘ri. Railway Variables: TOKEN=12345:ABCDE...")
 WHITELIST = {165553982, "Yunus1995"}
 TUN_REJIMI = False
 KANAL_USERNAME = None
@@ -1112,6 +1110,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
