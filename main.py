@@ -1121,18 +1121,26 @@ async def init_group_db():
     log.info("Per-group DB jadvallari tayyor: group_settings, group_user_counts, group_privileges, group_blocks")
 
 async def get_group_settings(chat_id: int) -> dict:
-    """Fetch group settings from DB (cached)."""
+    """Fetch group settings from DB (cached).
+
+    Muhim: DB vaqtincha uzilib qolsa ham, guruh sozlamalari (tun/kanal/majbur)
+    "o'z-o'zidan o'chib ketmasligi" uchun oxirgi cache qilingan qiymat qaytariladi.
+    """
     import time
     now = time.monotonic()
     cached = _GROUP_SETTINGS_CACHE.get(chat_id)
     if cached and (now - cached[1]) < _GROUP_SETTINGS_TTL_SEC:
         return dict(cached[0])
 
-    s = _default_group_settings()
-    if not DB_POOL:
-        _GROUP_SETTINGS_CACHE[chat_id] = (s, now)
-        return dict(s)
+    # Cache bo'lsa, DB xatoda shuni qaytaramiz; bo'lmasa default.
+    fallback = dict(cached[0]) if cached else _default_group_settings()
 
+    if not DB_POOL:
+        # DB yo'q bo'lsa ham cache yangilanadi
+        _GROUP_SETTINGS_CACHE[chat_id] = (dict(fallback), now)
+        return dict(fallback)
+
+    s = _default_group_settings()
     try:
         async with DB_POOL.acquire() as con:
             row = await con.fetchrow(
@@ -1151,10 +1159,13 @@ async def get_group_settings(chat_id: int) -> dict:
                     chat_id
                 )
     except Exception as e:
-        log.warning(f"get_group_settings xatolik: {e}")
+        # DB xatoda: oxirgi cache (yoki default) bilan davom etamiz
+        log.warning(f"get_group_settings xatolik (cache bilan davom): {e}")
+        return dict(fallback)
 
-    _GROUP_SETTINGS_CACHE[chat_id] = (s, now)
+    _GROUP_SETTINGS_CACHE[chat_id] = (dict(s), now)
     return dict(s)
+
 
 async def set_group_settings(chat_id: int, *, tun=None, kanal_username=None, majbur_limit=None):
     """Upsert group settings for chat_id."""
