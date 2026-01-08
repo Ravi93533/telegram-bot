@@ -1406,9 +1406,7 @@ async def majbur(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     else:
         await update.effective_message.reply_text(
-            "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇
-"
-            "Qo‘shish shart emas — /majburoff",
+            "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇\n\nQo‘shish shart emas — /majburoff",
             reply_markup=majbur_klaviatura()
         )
 
@@ -1920,4 +1918,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
