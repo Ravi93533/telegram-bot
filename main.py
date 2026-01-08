@@ -108,6 +108,7 @@ def start_web():
 
 
 # ---------------------- Config ----------------------
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO) log = logging.getLogger(__name__)
 import os, logging
 TOKEN = os.getenv("TOKEN")
 if not TOKEN:
@@ -1109,5 +1110,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
