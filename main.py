@@ -1,4 +1,3 @@
-
 from telegram import Chat, Message, Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
@@ -6,22 +5,19 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 import threading
 import os
 import re
+import json
 import logging
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-
-from flask import Flask
-
-# --- New (Postgres) ---
-import asyncio
-import json
 from typing import List, Optional
+
+from flask import Flask, request
 
 try:
     import asyncpg
 except ImportError:
-    asyncpg = None  # handled below with a log warning
-
+    asyncpg = None
 
 # ---------------------- Linked channel helpers ----------------------
 def _extract_forward_origin_chat(msg: Message):
@@ -76,18 +72,27 @@ async def is_linked_channel_autoforward(msg: Message, bot) -> bool:
 
 
 # ---------------------- Small keep-alive web server ----------------------
-app_flask = Flask(__name__)
+app = Flask(__name__)
 
-@app_flask.route("/")
+@app.route("/")
 def home():
     return "Bot ishlayapti!"
 
+@app.route("/webhook", methods=["POST"])
+def telegram_webhook():
+    update_json = request.get_json(force=True)
+    try:
+        update = Update.de_json(update_json, main_app.bot)
+        asyncio.run(main_app.process_update(update))
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Webhook update process error: {e}")
+    return "OK", 200
+
 def run_web():
-    app_flask.run(host="0.0.0.0", port=int(os.getenv("PORT", "10000")))
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "10000")))
 
 def start_web():
     threading.Thread(target=run_web, daemon=True).start()
-
 
 # ---------------------- Config ----------------------
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -1075,6 +1080,19 @@ def main():
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
+def main():
+    start_web()
+    webhook_url = os.getenv("WEBHOOK_URL")
+    if webhook_url:
+        asyncio.run(main_app.bot.set_webhook(webhook_url))
+        log.info("Webhook URL ulandi, bot webhook rejimida ishga tushdi.")
+    else:
+        log.warning("WEBHOOK_URL topilmadi; polling rejimi Railway’da ishlamasligi mumkin.")
+
+    # Railway’da webhook bilan ishlash uchun polling emas — idle holda turadi
+    log.info("Bot Railway’da ishlashga tayyor.")
+    asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":
     main()
+
