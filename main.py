@@ -414,7 +414,56 @@ async def set_commands(app):
         scope=BotCommandScopeAllPrivateChats()
     )
 
-async def post_init(app):
+async def init_db(app=None):
+    """Create asyncpg pool and ensure tables exist. Also migrate JSON -> DB once."""
+    global DB_POOL
+    db_url = _get_db_url()
+    if not db_url:
+        log.warning("DATABASE_URL topilmadi; DM ro'yxati JSON faylga yoziladi (ephemeral).")
+        return
+    if asyncpg is None:
+        log.error("asyncpg o'rnatilmagan. requirements.txt ga 'asyncpg' qo'shing.")
+        return
+
+    # FAQAT BIRTA O‘ZGARISH — SSL REQUIRE QO‘SHILDI
+    DB_POOL = await asyncpg.create_pool(dsn=db_url, ssl="require", min_size=1, max_size=5)
+
+    async with DB_POOL.acquire() as con:
+        await con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS dm_users (
+                user_id BIGINT PRIMARY KEY,
+                username TEXT,
+                first_name TEXT,
+                last_name TEXT,
+                is_bot BOOLEAN DEFAULT FALSE,
+                language_code TEXT,
+                last_seen TIMESTAMPTZ DEFAULT now()
+            );
+            """
+        )
+
+    # Migrate from JSON (best-effort, only if DB empty)
+    try:
+        if DB_POOL:
+            async with DB_POOL.acquire() as con:
+                count_row = await con.fetchval("SELECT COUNT(*) FROM dm_users;")
+            if count_row == 0 and os.path.exists(SUB_USERS_FILE):
+                s = _load_ids(SUB_USERS_FILE)
+                if s:
+                    async with DB_POOL.acquire() as con:
+                        async with con.transaction():
+                            for cid in s:
+                                try:
+                                    cid_int = int(cid)
+                                except Exception:
+                                    continue
+                                await con.execute(
+                                    "INSERT INTO dm_users (user_id) VALUES ($1) ON CONFLICT DO NOTHING;", cid_int
+                                )
+                    log.info(f"Migratsiya: JSON dan Postgresga {len(s)} ta ID import qilindi.")
+    except Exception as e:
+        log.warning(f"Migratsiya vaqtida xato: {e}")
     await init_db(app)
     await set_commands(app)
 
@@ -426,3 +475,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
