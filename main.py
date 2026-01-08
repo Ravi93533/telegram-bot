@@ -108,12 +108,10 @@ def start_web():
 
 
 # ---------------------- Config ----------------------
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
-log = logging.getLogger(__name__)
-
+import os, logging
 TOKEN = os.getenv("TOKEN")
 if not TOKEN:
-    raise RuntimeError("TOKEN env o'rnatilmagan. Railway Variables ga TOKEN=... qo'ying.")
+    raise RuntimeError("TOKEN env topilmadi. Variables ga TOKEN=bot_token qo‘ying.")
 WHITELIST = {165553982, "Yunus1995"}
 TUN_REJIMI = False
 KANAL_USERNAME = None
@@ -1111,4 +1109,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
