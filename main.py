@@ -1,3 +1,4 @@
+
 from telegram import Chat, Message, Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
@@ -5,19 +6,29 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 import threading
 import os
 import re
-import json
 import logging
-import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
 
-from flask import Flask, request
+from flask import Flask
+
+try:
+    from waitress import serve  # production-grade WSGI server (Railway uchun tavsiya)
+except Exception:
+    serve = None
+
+# --- New (Postgres) ---
+import asyncio
+import json
+import ssl
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+from typing import List, Optional
 
 try:
     import asyncpg
 except ImportError:
-    asyncpg = None
+    asyncpg = None  # handled below with a log warning
+
 
 # ---------------------- Linked channel helpers ----------------------
 def _extract_forward_origin_chat(msg: Message):
@@ -72,34 +83,37 @@ async def is_linked_channel_autoforward(msg: Message, bot) -> bool:
 
 
 # ---------------------- Small keep-alive web server ----------------------
-app = Flask(__name__)
+app_flask = Flask(__name__)
 
-@app.route("/")
+@app_flask.route("/")
 def home():
     return "Bot ishlayapti!"
 
-@app.route("/webhook", methods=["POST"])
-def telegram_webhook():
-    update_json = request.get_json(force=True)
-    try:
-        update = Update.de_json(update_json, main_app.bot)
-        asyncio.run(main_app.process_update(update))
-    except Exception as e:
-        logging.getLogger(__name__).warning(f"Webhook update process error: {e}")
-    return "OK", 200
-
 def run_web():
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "10000")))
+    port = int(os.getenv("PORT", "8080"))
+    if serve:
+        serve(app_flask, host="0.0.0.0", port=port)
+    else:
+        # Fallback: Flask dev server (agar waitress o'rnatilmagan bo'lsa)
+        app_flask.run(host="0.0.0.0", port=port)
 
 def start_web():
-    threading.Thread(target=run_web, daemon=True).start()
+    # Railway "web" service uchun PORT talab qilinadi.
+    # Agar siz botni "worker" sifatida ishga tushirsangiz, ENABLE_WEB=0 qilib qo'ying.
+    enable = os.getenv("ENABLE_WEB")
+    if enable is None:
+        enable = "1" if os.getenv("PORT") else "0"
+    if str(enable).strip() in ("1", "true", "True", "yes", "YES"):
+        threading.Thread(target=run_web, daemon=True).start()
+
 
 # ---------------------- Config ----------------------
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
 
-TOKEN = os.getenv("TOKEN") or "YOUR_TOKEN_HERE"
-
+TOKEN = os.getenv("TOKEN")
+if not TOKEN:
+    raise RuntimeError("TOKEN env o'rnatilmagan. Railway Variables ga TOKEN=... qo'ying.")
 WHITELIST = {165553982, "Yunus1995"}
 TUN_REJIMI = False
 KANAL_USERNAME = None
@@ -196,7 +210,14 @@ async def init_db(app=None):
     if asyncpg is None:
         log.error("asyncpg o'rnatilmagan. requirements.txt ga 'asyncpg' qo'shing.")
         return
-    DB_POOL = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5)
+    # Railway/Render kabi PaaS larda Postgres ko'pincha SSL talab qiladi.
+    # asyncpg uchun SSL konteksti beramiz. (Mahalliy DB ham odatda muammo qilmaydi.)
+    ssl_ctx = ssl.create_default_context()
+    # Railway ba'zan `postgres://` beradi; moslik uchun sxemani normalizatsiya qilamiz.
+    if db_url.startswith("postgres://"):
+        db_url = "postgresql://" + db_url[len("postgres://"):]
+    DB_POOL = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5, ssl=ssl_ctx)
+
     async with DB_POOL.acquire() as con:
         await con.execute(
             """
@@ -1038,6 +1059,13 @@ async def post_init(app):
 
 def main():
     start_web()
+
+    log.info("Bot start: polling mode (Railway).")
+    if os.getenv("DATABASE_URL") or os.getenv("INTERNAL_DATABASE_URL") or os.getenv("DATABASE_INTERNAL_URL") or os.getenv("DB_URL"):
+        log.info("DB: Postgres URL topildi (asyncpg pool init qilinadi).")
+    else:
+        log.warning("DB: DATABASE_URL topilmadi (DM ro'yxat JSON fallback). Railway'da Postgres ulasangiz, Variables ga DATABASE_URL qo'ying.")
+
     app = ApplicationBuilder().token(TOKEN).build()
 
     # Commands
@@ -1080,18 +1108,6 @@ def main():
 
     app.run_polling(allowed_updates=Update.ALL_TYPES)
 
-def main():
-    start_web()
-    webhook_url = os.getenv("WEBHOOK_URL")
-    if webhook_url:
-        asyncio.run(main_app.bot.set_webhook(webhook_url))
-        log.info("Webhook URL ulandi, bot webhook rejimida ishga tushdi.")
-    else:
-        log.warning("WEBHOOK_URL topilmadi; polling rejimi Railway’da ishlamasligi mumkin.")
-
-    # Railway’da webhook bilan ishlash uchun polling emas — idle holda turadi
-    log.info("Bot Railway’da ishlashga tayyor.")
-    asyncio.get_event_loop().run_forever()
 
 if __name__ == "__main__":
     main()
