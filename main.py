@@ -1,3 +1,4 @@
+
 from telegram import Chat, Message, Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
@@ -110,9 +111,9 @@ def start_web():
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
 
-TOKEN = os.getenv("TOKEN", "").strip()
-if not TOKEN or ":" not in TOKEN:
-    raise RuntimeError("TOKEN env topilmadi yoki format noto‘g‘ri. Railway Variables: TOKEN=12345:ABCDE...")
+TOKEN = os.getenv("TOKEN")
+if not TOKEN:
+    raise RuntimeError("TOKEN env o'rnatilmagan. Railway Variables ga TOKEN=... qo'ying.")
 WHITELIST = {165553982, "Yunus1995"}
 TUN_REJIMI = False
 KANAL_USERNAME = None
@@ -215,7 +216,38 @@ async def init_db(app=None):
     # Railway ba'zan `postgres://` beradi; moslik uchun sxemani normalizatsiya qilamiz.
     if db_url.startswith("postgres://"):
         db_url = "postgresql://" + db_url[len("postgres://"):]
-    DB_POOL = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5, ssl=ssl_ctx)
+    # asyncpg SSL'ni `ssl=` orqali boshqaradi; dsn ichidagi sslmode parametrlari ba'zan muammo qiladi.
+    try:
+        u = urlparse(db_url)
+        qs = dict(parse_qsl(u.query, keep_blank_values=True))
+        for k in list(qs.keys()):
+            if k.lower() in ("sslmode", "sslrootcert", "sslcert", "sslkey"):
+                qs.pop(k, None)
+        db_url = urlunparse(u._replace(query=urlencode(qs)))
+    except Exception:
+        pass
+    # Ba'zi PaaS/DB (ayniqsa Render free) birinchi ulanishda connection'ni yopib yuborishi mumkin.
+    # Shuning uchun retry/backoff bilan pool ochamiz.
+    DB_POOL = None
+    for attempt in range(1, 6):
+        try:
+            DB_POOL = await asyncpg.create_pool(
+                dsn=db_url,
+                min_size=1,
+                max_size=5,
+                ssl=ssl_ctx,
+                timeout=30,
+                max_inactive_connection_lifetime=300,
+            )
+            log.info("Postgres DB_POOL ochildi (attempt=%s).", attempt)
+            break
+        except Exception as e:
+            log.warning("Postgres ulanish xatosi (attempt=%s/5): %r", attempt, e)
+            # exponential backoff: 1,2,4,8,16 (max 16s)
+            await asyncio.sleep(min(2 ** (attempt - 1), 16))
+    if DB_POOL is None:
+        log.error("Postgres'ga ulanib bo'lmadi. DB funksiyalar vaqtincha o'chadi; bot ishlashda davom etadi.")
+        return
 
     async with DB_POOL.acquire() as con:
         await con.execute(
@@ -1110,8 +1142,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
 
