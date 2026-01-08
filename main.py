@@ -1,4 +1,3 @@
-
 from telegram import Chat, Message, Update, BotCommand, BotCommandScopeAllPrivateChats, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatMemberStatus, ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ChatMemberHandler, ContextTypes, filters
@@ -104,7 +103,6 @@ FOYDALANUVCHI_HISOBI = defaultdict(int)
 RUXSAT_USER_IDS = set()
 BLOK_VAQTLARI = {}  # (chat_id, user_id) -> until_datetime (UTC)
 
-# ✅ To'liq yozish ruxsatlari (guruh sozlamalari ruxsat bergan taqdirda)
 FULL_PERMS = ChatPermissions(
     can_send_messages=True,
     can_send_audios=True,
@@ -119,7 +117,6 @@ FULL_PERMS = ChatPermissions(
     can_invite_users=True,
 )
 
-# Blok uchun ruxsatlar (1 daqiqa): faqat yozish yopiladi, odam qo'shishga ruxsat qoldiriladi
 BLOCK_PERMS = ChatPermissions(
     can_send_messages=False,
     can_send_audios=False,
@@ -134,7 +131,6 @@ BLOCK_PERMS = ChatPermissions(
     can_invite_users=True,
 )
 
-# So'kinish lug'ati (qisqartirilgan, aslidagi ro'yxat saqlandi)
 UYATLI_SOZLAR = {"am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisizlar?", "amsan", "ammisan?", "amlar", "amlatta", "amyalaq", "amyalar", "amyaloq", "amxor", "am yaliman", "am yalayman", "am latta", "aminga",
 "aminga ske", "aminga sikay", "buyingdi ami", "buyingdi omi", "buyingni ami", "buyindi omi", "buynami", "biyindi ami", "blya", "biyundiami", "blyat", "buynami", "buyingdi omi", "buyingni ami",
 "buyundiomi", "dalbayob", "dalbayobmisan", "dalbayoblar", "dalbayobmisan?", "debil", "dolboyob", "durak", "fuck", "fakyou", "fuckyou", "foxisha", "foxishasan", "foxishamisan?", "foxishalar", "fohisha", "fohishasan", "fohishamisan?",
@@ -144,89 +140,16 @@ UYATLI_SOZLAR = {"am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisi
 "huyimga", "huygami", "otti qo'tag'i", "ogzinga skay", "onagniomi", "onagni omi", "onangniami", "onagni ami", "pashol naxuy", "pasholnaxuy", "padarlanat", "padarlanatlar", "padarlanatsan", "pasholnaxxuy", "pidor",
 "poshol naxxuy", "posholnaxxuy", "poxxuy", "poxuy", "qanjik", "qanjiq", "qanjiqsan", "qanjiqlar", "qonjiq", "qotaq", "qotaqlar", "qotaqsan", "qotaqmisan", "qotaqxor", "qo'taq", "qo'taqxo'r", "chochoq", "chochaq",
 "qotagim", "qo'tag'im", "qotoqlar", "qo'toqlar", "qotag'im", "qotoglar", "qo'tog'lar", "qotagim", "skiy", "skay", "sikey", "sik", "skaman", "sikaman", "skasizmi", "sikasizmi", "sikay", "sikalak", "skishaman", "skishamiz",
-"skishamizmi?", "sikishaman", "sikishamiz", "skey" "sikish", "sikishish", "skay", "soska", "suka", "sukalar", "tashak", "tashaklar", "tashaq", "tashaqlar", "toshoq", "toshoqlar", "toshok", "xuy", "xuramilar", "xuy",
+"skishamizmi?", "sikishaman", "sikishamiz", "skey", "sikish", "sikishish", "skay", "soska", "suka", "sukalar", "tashak", "tashaklar", "tashaq", "tashaqlar", "toshoq", "toshoqlar", "toshok", "xuy", "xuramilar", "xuy",
 "xuyna", "xaromi", "xoramilar", "xoromi", "xoromilar", "g'ar", "ам", "аммисан", "аммислар", "аммислар?", "аммисизлар", "аммисизлар?", "амсан", "аммисан?", "амлар", "амлатта", "амялақ", "амялар", "амялоқ", "амхор", "ам ялиман", "ам ялайман", "ам латта", "аминга",
 "аминга ске", "аминга сикай", "буйингди ами", "буйингди оми", "буйингни ами", "буйинди оми", "буйнами", "бийинди ами", "бля", "биюндиами", "блят", "буйнами", "буйингди оми", "буйингни ами",
 "буюндиоми", "далбаёб", "далбаёбмисан", "далбаёблар", "далбаёбмисан?", "дебил", "долбоёб", "дурак", "фуcк", "факёу", "фуcкёу", "фохиша", "фохишасан", "фохишамисан?", "фохишалар", "фоҳиша", "фоҳишасан", "фоҳишамисан?",
-"фоҳишалар", "гандон", "гандонмисан", "гандонмисан?", "гандонлар", "ҳароми", "ҳуй", "ҳаромилар", "ҳороми", "ҳоромилар", "идиннаххуй", "идинаххуй", "идин нахуй", "идин наххуй", "исқирт", "исқиртсан", "исқиртлар", "жалап", "жалаплар",
-"жалапсан", "жалапкот", "жалапкоз", "кот", "котмислар", "котмислар?", "котмисизлар", "кутагим", "котмисизлар?", "котлар", "котак", "котмисан", "котмисан?", "котсан", "кўтсан", "кўтмисан", "кўт", "кўтлар", "котинга ске", "котинга сикай", "котингаске", "котагим", "котинга", "кўтинга",
-"котингга", "котвача", "кўтак", "ланати", "ланат", "ланатилар", "ланатисан", "мудак", "наххуй", "оғзингаскай", "оғзинга скей", "огзинга скей", "оғзинга скай", "огзингаскай", "отти қотаги", "отни қотаги", "ҳоромилар",
-"ҳуйимга", "ҳуйгами", "отти қўтағи", "огзинга скай", "онагниоми", "онагни оми", "онангниами", "онагни ами", "пашол нахуй", "пашолнахуй", "падарланат", "падарланатлар", "падарланатсан", "пашолнаххуй", "пидор", "пошол наххуй",
-"пошолнаххуй", "поххуй", "похуй", "қанжик", "қанжиқ", "қанжиқсан", "қанжиқлар", "қонжиқ", "қотақ", "қотақлар", "қотақсан", "қотақмисан", "қотақхор", "қўтақ", "қўтақхўр", "чочоқ", "чочақ",
-"қотагим", "қўтағим", "қотоқлар", "қўтоқлар", "қотағим", "қотоглар", "қўтоғлар", "қотагим", "ский", "скай", "сикей", "сик", "скаман", "сикаман", "скасизми", "сикасизми", "сикай", "сикалак", "скишаман", "скишамиз",
-"скишамизми?", "сикишаман", "сикишамиз", "скей" "сикиш", "сикишиш", "скай", "соска", "сука", "сукалар", "ташак", "ташаклар", "ташақ", "ташақлар", "тошоқ", "тошоқлар", "тошок", "хуй", "хурамилар", "хуй",
-"хуйна", "хароми", "хорамилар", "хороми", "хоромилар", "ғар"}
-
-# Game/inline reklama kalit so'zlar/domenlar
-SUSPECT_KEYWORDS = {"open game", "play", "играть", "открыть игру", "game", "cattea", "gamee", "hamster", "notcoin", "tap to earn", "earn", "clicker"}
-SUSPECT_DOMAINS = {"cattea", "gamee", "hamster", "notcoin", "tgme", "t.me/gamee", "textra.fun", "ton"}
-
-# ----------- DM (Postgres-backed) -----------
-SUB_USERS_FILE = "subs_users.json"  # fallback/migration manbasi
-
-OWNER_IDS = {165553982}
-
-def is_owner(update: Update) -> bool:
-    u = update.effective_user
-    return bool(u and u.id in OWNER_IDS)
-
-# Postgres connection pool
-DB_POOL: Optional["asyncpg.Pool"] = None
-
-def _get_db_url() -> Optional[str]:
-    return (
-        os.getenv("DATABASE_URL")
-        or os.getenv("INTERNAL_DATABASE_URL")
-        or os.getenv("DATABASE_INTERNAL_URL")
-        or os.getenv("DB_URL")
-    )
-
-async def init_db(app=None):
-    """Create asyncpg pool and ensure tables exist. Also migrate JSON -> DB once."""
-    global DB_POOL
-    db_url = _get_db_url()
-    if not db_url:
-        log.warning("DATABASE_URL topilmadi; DM ro'yxati JSON faylga yoziladi (ephemeral).")
-        return
-    if asyncpg is None:
-        log.error("asyncpg o'rnatilmagan. requirements.txt ga 'asyncpg' qo'shing.")
-        return
-    DB_POOL = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5)
-    async with DB_POOL.acquire() as con:
-        await con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS dm_users (
-                user_id BIGINT PRIMARY KEY,
-                username TEXT,
-                first_name TEXT,
-                last_name TEXT,
-                is_bot BOOLEAN DEFAULT FALSE,
-                language_code TEXT,
-                last_seen TIMESTAMPTZ DEFAULT now()
-            );
-            """
-        )
-    # Migrate from JSON (best-effort, only if DB empty)
-    try:
-        if DB_POOL:
-            async with DB_POOL.acquire() as con:
-                count_row = await con.fetchval("SELECT COUNT(*) FROM dm_users;")
-            if count_row == 0 and os.path.exists(SUB_USERS_FILE):
-                s = _load_ids(SUB_USERS_FILE)
-                if s:
-                    async with DB_POOL.acquire() as con:
-                        async with con.transaction():
-                            for cid in s:
-                                try:
-                                    cid_int = int(cid)
-                                except Exception:
-                                    continue
-                                await con.execute(
-                                    "INSERT INTO dm_users (user_id) VALUES ($1) ON CONFLICT DO NOTHING;", cid_int
-                                )
-                    log.info(f"Migratsiya: JSON dan Postgresga {len(s)} ta ID import qilindi.")
-    except Exception as e:
-        log.warning(f"Migratsiya vaqtida xato: {e}")
+"фохишалар", "гандон", "гандонмисан", "гандонмисан?", "гандонлар", "ҳароми", "ҳуй", "ҳаромилар", "ҳороми", "ҳоромилар", "идиннаххуй", "идинаххуй", "идин нахуй", "идин наххуй", "исқирт", "исқиртсан", "исқиртлар", "жалап", "жалаплар",
+"жалапсан", "жалапкот", "жалапкоз", "кот", "котмислар", "котмислар?", "котmisizlar", "kutagim", "kotlar", "kotak", "kotmisan", "kotmisan?", "kot", "ko't", "ko'tlar", "ko'tak", "ko't", "ko'tlar", "kotingga", "ko'tak", "kotingga", "kotvacha", "ko'tak",
+"lanati", "lanat", "lanatilar", "lanatisan", "mudak", "naxxuy", "og'zingaskay", "og'zinga", "og'zinga skay", "onagniomi", "onagni", "onangniami", "onagni", "pasholnaxuy", "pasholnaxxuy", "pidor",
+"posholnaxxuy", "poxuy", "qanjik", "qanjiq", "qanjiqsan", "qanjiqlar", "qotaq", "qotaqlar", "qotaqsan", "qotaqmisan", "qotaqxor", "qo'taq", "chochoq", "chochaq",
+"qotagim", "qotoglar", "qo'tog'lar", "qotagim", "skiy", "skay", "sikey", "sik", "skaman", "sikaman", "skasizmi", "sikasizmi", "sikay", "sikalak", "skishaman", "skishamiz",
+"sikishaman", "sikishamiz", "skey", "sikish", "sikishish", "skay", "soska", "suka", "sukalar", "tashak", "tashaklar", "toshoq", "toshoqlar", "toshok", "xuy", "xuy", "xuramilar", "xuy", "xuyna", "xaromi", "xoramilar", "xoromi", "xoromilar"}
 
 async def dm_upsert_user(user):
     """Add/update a user to dm_users (Postgres if available, else JSON)."""
@@ -253,7 +176,6 @@ async def dm_upsert_user(user):
         except Exception as e:
             log.warning(f"dm_upsert_user(DB) xatolik: {e}")
     else:
-        # Fallback to JSON
         add_chat_to_subs_fallback(user)
 
 async def dm_all_ids() -> List[int]:
@@ -281,140 +203,7 @@ async def dm_remove_user(user_id: int):
         remove_chat_from_subs_fallback(user_id)
 
 
-# ----------- Fallback JSON helpers (only used if DB not available) -----------
-def _load_ids(path: str):
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return set(json.load(f))
-    except Exception:
-        return set()
-
-def _save_ids(path: str, data: set):
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(sorted(list(data)), f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        try:
-            log.warning(f"IDs saqlashda xatolik: {e}")
-        except Exception:
-            print(f"IDs saqlashda xatolik: {e}")
-
-def add_chat_to_subs_fallback(user_or_chat):
-    s = _load_ids(SUB_USERS_FILE)
-    # user_or_chat is User in our call sites
-    cid = getattr(user_or_chat, "id", None)
-    if cid is not None:
-        s.add(cid)
-        _save_ids(SUB_USERS_FILE, s)
-    return "user"
-
-def remove_chat_from_subs_fallback(user_id: int):
-    s = _load_ids(SUB_USERS_FILE)
-    if user_id in s:
-        s.remove(user_id)
-        _save_ids(SUB_USERS_FILE, s)
-    return "user"
-
-
-# ----------- Privilege/Admin helpers -----------
-async def is_admin(update: Update) -> bool:
-    chat = update.effective_chat
-    msg = update.effective_message
-    user = update.effective_user
-    if not chat:
-        return False
-    try:
-        # Anonymous admin (message on behalf of the group itself)
-        if msg and getattr(msg, "sender_chat", None):
-            sc = msg.sender_chat
-            if sc.id == chat.id:
-                return True
-            # Linked channel posting into a supergroup
-            linked_id = getattr(chat, "linked_chat_id", None)
-            if linked_id and sc.id == linked_id:
-                return True
-        # Regular user-based admin check
-        if user:
-            member = await update.get_bot().get_chat_member(chat.id, user.id)
-            return member.status in ("administrator", "creator", "owner")
-        return False
-    except Exception as e:
-        log.warning(f"is_admin tekshiruvda xatolik: {e}")
-        return False
-
-async def is_privileged_message(msg, bot) -> bool:
-    """Adminlar, creatorlar yoki guruh/linked kanal nomidan yozilgan (sender_chat) xabarlar uchun True."""
-    try:
-        chat = msg.chat
-        user = msg.from_user
-        # Anonymous admin (group) yoki linked kanal
-        if getattr(msg, "sender_chat", None):
-            sc = msg.sender_chat
-            if sc.id == chat.id:
-                return True
-            linked_id = getattr(chat, "linked_chat_id", None)
-            if linked_id and sc.id == linked_id:
-                return True
-        # Odatdagi admin/creator
-        if user:
-            member = await bot.get_chat_member(chat.id, user.id)
-            if member.status in ("administrator", "creator", "owner"):
-                return True
-    except Exception as e:
-        log.warning(f"is_privileged_message xatolik: {e}")
-    return False
-
-async def kanal_tekshir(user_id: int, bot) -> bool:
-    global KANAL_USERNAME
-    if not KANAL_USERNAME:
-        return True
-    try:
-        member = await bot.get_chat_member(KANAL_USERNAME, user_id)
-        return member.status in ("member", "creator", "administrator")
-    except Exception as e:
-        log.warning(f"kanal_tekshir xatolik: {e}")
-        return False
-
-def matndan_sozlar_olish(matn: str):
-    return re.findall(r"\b\w+\b", (matn or "").lower())
-
-def admin_add_link(bot_username: str) -> str:
-    rights = [
-        'delete_messages','restrict_members','invite_users',
-        'pin_messages','manage_topics','manage_video_chats','manage_chat'
-    ]
-    rights_param = '+'.join(rights)
-    return f"https://t.me/{bot_username}?startgroup&admin={rights_param}"
-
-def add_to_group_kb(bot_username: str):
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(bot_username))]]
-    )
-
-def has_suspicious_buttons(msg) -> bool:
-    try:
-        kb = msg.reply_markup.inline_keyboard if msg.reply_markup else []
-        for row in kb:
-            for btn in row:
-                if getattr(btn, "callback_game", None) is not None:
-                    return True
-                u = getattr(btn, "url", "") or ""
-                if u:
-                    low = u.lower()
-                    if any(dom in low for dom in SUSPECT_DOMAINS) or any(x in low for x in ("game", "play", "tgme")):
-                        return True
-                wa = getattr(btn, "web_app", None)
-                if wa and getattr(wa, "url", None):
-                    if any(dom in wa.url.lower() for dom in SUSPECT_DOMAINS):
-                        return True
-        return False
-    except Exception:
-        return False
-
-
-# ---------------------- Commands ----------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Auto-subscribe: /start bosgan foydalanuvchini DM ro'yxatiga qo'shamiz (DB)
     try:
         if update.effective_chat.type == 'private':
             await dm_upsert_user(update.effective_user)
@@ -520,21 +309,11 @@ async def majbur(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not (3 <= val <= 30):
                 raise ValueError
             MAJBUR_LIMIT = val
-            await update.effective_message.reply_text(
-                f"✅ Majburiy odam qo‘shish limiti: <b>{MAJBUR_LIMIT}</b>",
-                parse_mode="HTML"
-            )
+            await update.effective_message.reply_text(f"✅ Majburiy odam qo‘shish limiti: <b>{MAJBUR_LIMIT}</b>", parse_mode="HTML")
         except ValueError:
-            await update.effective_message.reply_text(
-                "❌ Noto‘g‘ri qiymat. Ruxsat etilgan oraliq: <b>3–30</b>. Masalan: <code>/majbur 10</code>",
-                parse_mode="HTML"
-            )
+            await update.effective_message.reply_text("❌ Noto‘g‘ri qiymat. Ruxsat etilgan oraliq: <b>3–30</b>. Masalan: <code>/majbur 10</code>", parse_mode="HTML")
     else:
-        await update.effective_message.reply_text(
-            "👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇\n"
-            "Qo‘shish shart emas — /majburoff",
-            reply_markup=majbur_klaviatura()
-        )
+        await update.effective_message.reply_text("👥 Guruhda majburiy odam qo‘shishni nechta qilib belgilay? 👇\nQo‘shish shart emas — /majburoff", reply_markup=majbur_klaviatura())
 
 async def on_set_limit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
@@ -579,15 +358,6 @@ async def cleangroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     RUXSAT_USER_IDS.clear()
     await update.effective_message.reply_text("🗑 Barcha foydalanuvchilar hisobi va imtiyozlar 0 qilindi.")
 
-async def count_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    uid = update.effective_user.id
-    cnt = FOYDALANUVCHI_HISOBI.get(uid, 0)
-    if MAJBUR_LIMIT > 0:
-        qoldi = max(MAJBUR_LIMIT - cnt, 0)
-        await update.effective_message.reply_text(f"📊 Siz {cnt} ta odam qo‘shgansiz. Qolgan: {qoldi} ta.")
-    else:
-        await update.effective_message.reply_text(f"📊 Siz {cnt} ta odam qo‘shgansiz. (Majburiy qo‘shish faol emas)")
-
 async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return await update.effective_message.reply_text("⛔ Faqat adminlar.")
@@ -607,63 +377,7 @@ async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     uid = msg.reply_to_message.from_user.id
     FOYDALANUVCHI_HISOBI[uid] = 0
     RUXSAT_USER_IDS.discard(uid)
-    await msg.reply_text(f"🗑 <code>{uid}</code> foydalanuvchi hisobi 0 qilindi (imtiyoz o‘chirildi).", parse_mode="HTML")
-
-async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    await q.answer()
-    user_id = q.from_user.id
-    if not KANAL_USERNAME:
-        return await q.edit_message_text("⚠️ Kanal sozlanmagan.")
-    try:
-        member = await context.bot.get_chat_member(KANAL_USERNAME, user_id)
-        if member.status in ("member", "administrator", "creator"):
-            try:
-                await context.bot.restrict_chat_member(
-                    chat_id=q.message.chat.id,
-                    user_id=user_id,
-                    permissions=FULL_PERMS,
-                )
-            except Exception:
-                pass
-            await q.edit_message_text("✅ A’zo bo‘lganingiz tasdiqlandi. Endi guruhda yozishingiz mumkin.")
-        else:
-            await q.edit_message_text("❌ Hali kanalga a’zo emassiz.")
-    except Exception:
-        await q.edit_message_text("⚠️ Tekshirishda xatolik. Kanal username noto‘g‘ri yoki bot kanalga a’zo emas.")
-
-async def on_check_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    q = update.callback_query
-    uid = q.from_user.id
-
-    data = q.data
-    if ":" in data:
-        try:
-            owner_id = int(data.split(":", 1)[1])
-        except ValueError:
-            owner_id = None
-        if owner_id and owner_id != uid:
-            return await q.answer("Bu tugma siz uchun emas!", show_alert=True)
-
-    cnt = FOYDALANUVCHI_HISOBI.get(uid, 0)
-
-    if uid in RUXSAT_USER_IDS or (MAJBUR_LIMIT > 0 and cnt >= MAJBUR_LIMIT):
-        try:
-            await context.bot.restrict_chat_member(
-                chat_id=q.message.chat.id,
-                user_id=uid,
-                permissions=FULL_PERMS,
-            )
-        except Exception:
-            pass
-        BLOK_VAQTLARI.pop((q.message.chat.id, uid), None)
-        return await q.edit_message_text("✅ Talab bajarilgan! Endi guruhda yozishingiz mumkin.")
-
-    qoldi = max(MAJBUR_LIMIT - cnt, 0)
-    return await q.answer(
-        f"❗ Siz hozirgacha {cnt} ta foydalanuvchi qo‘shdingiz va yana {qoldi} ta foydalanuvchi qo‘shishingiz kerak",
-        show_alert=True
-    )
+    await msg.reply_text(f"🗑 <code>{uid}</code> foydalanuvchi hisobi 0 qilindi.", parse_mode="HTML")
 
 async def on_grant_priv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
@@ -683,322 +397,7 @@ async def on_grant_priv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         return await q.edit_message_text("❌ Noto‘g‘ri ma'lumot.")
     RUXSAT_USER_IDS.add(target_id)
-    await q.edit_message_text(f"🎟 <code>{target_id}</code> foydalanuvchiga imtiyoz berildi. Endi u yozishi mumkin.", parse_mode="HTML")
-
-
-# ---------------------- Filters ----------------------
-async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.effective_message
-    # 🔒 Linked kanalning avtomatik forward postlari — teginmaymiz
-    try:
-        if await is_linked_channel_autoforward(msg, context.bot):
-            return
-    except Exception:
-        pass
-    if not msg or not msg.chat or not msg.from_user:
-        return
-    # Admin/creator/guruh nomidan xabarlar — teginmaymiz
-    if await is_privileged_message(msg, context.bot):
-        return
-    # Oq ro'yxat
-    if msg.from_user.id in WHITELIST or (msg.from_user.username and msg.from_user.username in WHITELIST):
-        return
-    # Tun rejimi
-    if TUN_REJIMI:
-        try:
-            await msg.delete()
-        except:
-            pass
-        return
-    # Kanal a'zoligi
-    if not await kanal_tekshir(msg.from_user.id, context.bot):
-        try:
-            await msg.delete()
-        except:
-            pass
-        kb = [
-            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")],
-            [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
-        ]
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text=f"⚠️ {msg.from_user.mention_html()}, siz {KANAL_USERNAME} kanalga a’zo emassiz!",
-            reply_markup=InlineKeyboardMarkup(kb),
-            parse_mode="HTML"
-        )
-        return
-
-    text = msg.text or msg.caption or ""
-    entities = msg.entities or msg.caption_entities or []
-
-    # Inline bot orqali kelgan xabar — ko'pincha game reklama
-    if getattr(msg, "via_bot", None):
-        try:
-            await msg.delete()
-        except:
-            pass
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text=f"⚠️ {msg.from_user.mention_html()}, yashirin ssilka yuborish taqiqlangan!",
-            reply_markup=add_to_group_kb(context.bot.username),
-            parse_mode="HTML"
-        )
-        return
-
-    # Tugmalarda game/web-app/URL bo'lsa — blok
-    if has_suspicious_buttons(msg):
-        try:
-            await msg.delete()
-        except:
-            pass
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text="⚠️ O‘yin/veb-app tugmali reklama taqiqlangan!",
-            reply_markup=add_to_group_kb(context.bot.username)
-        )
-        return
-
-    # Matndan o‘yin reklamasini aniqlash
-    low = text.lower()
-    if any(k in low for k in SUSPECT_KEYWORDS):
-        try:
-            await msg.delete()
-        except:
-            pass
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text="⚠️ O‘yin reklamalari taqiqlangan!",
-            reply_markup=add_to_group_kb(context.bot.username)
-        )
-        return
-
-    # Botlardan kelgan reklama/havola/game
-    if getattr(msg.from_user, "is_bot", False):
-        has_game = bool(getattr(msg, "game", None))
-        has_url_entity = any(ent.type in ("text_link", "url", "mention") for ent in entities)
-        has_url_text = any(x in low for x in ("t.me","telegram.me","http://","https://","www.","youtu.be","youtube.com"))
-        if has_game or has_url_entity or has_url_text:
-            try:
-                await msg.delete()
-            except:
-                pass
-            await context.bot.send_message(
-                chat_id=msg.chat_id,
-                text=f"⚠️ {msg.from_user.mention_html()}, reklama/ssilka yuborish taqiqlangan!",
-                reply_markup=add_to_group_kb(context.bot.username),
-                parse_mode="HTML"
-            )
-            return
-
-    # Yashirin yoki aniq ssilkalar
-    for ent in entities:
-        if ent.type in ("text_link", "url", "mention"):
-            url = getattr(ent, "url", "") or ""
-            if url and ("t.me" in url or "telegram.me" in url or "http://" in url or "https://" in url):
-                try:
-                    await msg.delete()
-                except:
-                    pass
-                await context.bot.send_message(
-                    chat_id=msg.chat_id,
-                    text=f"⚠️ {msg.from_user.mention_html()}, yashirin ssilka yuborish taqiqlangan!",
-                    reply_markup=add_to_group_kb(context.bot.username),
-                    parse_mode="HTML"
-                )
-                return
-
-    if any(x in low for x in ("t.me","telegram.me","@","www.","https://youtu.be","http://","https://")):
-        try:
-            await msg.delete()
-        except:
-            pass
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text=f"⚠️ {msg.from_user.mention_html()}, reklama/ssilka yuborish taqiqlangan!",
-            reply_markup=add_to_group_kb(context.bot.username),
-            parse_mode="HTML"
-        )
-        return
-
-    # So'kinish
-    sozlar = matndan_sozlar_olish(text)
-    if any(s in UYATLI_SOZLAR for s in sozlar):
-        try:
-            await msg.delete()
-        except:
-            pass
-        await context.bot.send_message(
-            chat_id=msg.chat_id,
-            text=f"⚠️ {msg.from_user.mention_html()}, guruhda so‘kinish taqiqlangan!",
-            reply_markup=add_to_group_kb(context.bot.username),
-            parse_mode="HTML"
-        )
-        return
-
-# Yangi a'zolarni qo'shganlarni hisoblash hamda kirdi/chiqdi xabarlarni o'chirish
-async def on_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    msg = update.effective_message
-    adder = msg.from_user
-    members = msg.new_chat_members or []
-    if not adder:
-        return
-    for m in members:
-        if adder.id != m.id:
-            FOYDALANUVCHI_HISOBI[adder.id] += 1
-    try:
-        await msg.delete()
-    except:
-        pass
-
-# Majburiy qo'shish filtri — yetmaganlarda 1 daqiqaga blok
-async def majbur_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if MAJBUR_LIMIT <= 0:
-        return
-    msg = update.effective_message
-    # 🔒 Linked kanalning avtomatik forward postlari — teginmaymiz
-    try:
-        if await is_linked_channel_autoforward(msg, context.bot):
-            return
-    except Exception:
-        pass
-    if not msg or not msg.from_user:
-        return
-    if await is_privileged_message(msg, context.bot):
-        return
-
-    uid = msg.from_user.id
-
-    # Agar foydalanuvchi hanuz blokda bo'lsa — xabarini o'chirib, hech narsa yubormaymiz
-    now = datetime.now(timezone.utc)
-    key = (msg.chat_id, uid)
-    until_old = BLOK_VAQTLARI.get(key)
-    if until_old and now < until_old:
-        try:
-            await msg.delete()
-        except:
-            pass
-        return
-    if uid in RUXSAT_USER_IDS:
-        return
-
-    cnt = FOYDALANUVCHI_HISOBI.get(uid, 0)
-    if cnt >= MAJBUR_LIMIT:
-        return
-
-    # Xabarni o'chiramiz
-    try:
-        await msg.delete()
-    except:
-        return
-
-    # 1 daqiqaga blok
-    until = datetime.now(timezone.utc) + timedelta(minutes=1)
-    BLOK_VAQTLARI[(msg.chat_id, uid)] = until
-    try:
-        await context.bot.restrict_chat_member(
-            chat_id=msg.chat_id,
-            user_id=uid,
-            permissions=BLOCK_PERMS,
-            until_date=until
-        )
-    except Exception as e:
-        log.warning(f"Restrict failed: {e}")
-
-    qoldi = max(MAJBUR_LIMIT - cnt, 0)
-    kb = [
-        [InlineKeyboardButton("✅ Odam qo‘shdim", callback_data=f"check_added:{uid}")],
-        [InlineKeyboardButton("🎟 Imtiyoz berish", callback_data=f"grant:{uid}")],
-        [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))],
-        [InlineKeyboardButton("⏳ 1 daqiqaga bloklandi", callback_data="noop")]
-    ]
-    await context.bot.send_message(
-        chat_id=msg.chat_id,
-        text=f"⚠️ Guruhda yozish uchun {MAJBUR_LIMIT} ta odam qo‘shishingiz kerak! Qolgan: {qoldi} ta.",
-        reply_markup=InlineKeyboardMarkup(kb)
-    )
-
-
-# -------------- Bot my_status (admin emas) ogohlantirish --------------
-async def on_my_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        st = update.my_chat_member.new_chat_member.status
-    except Exception:
-        return
-    if st in (ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED):
-        me = await context.bot.get_me()
-        kb = InlineKeyboardMarkup([[InlineKeyboardButton(
-            '🔐 Botni admin qilish', url=admin_add_link(me.username)
-        )]])
-        try:
-            await context.bot.send_message(
-                chat_id=update.effective_chat.id,
-                text=(
-                    '⚠️ Bot hozircha *admin emas*.\n'
-                    "Iltimos, pastdagi tugma orqali admin qiling, shunda barcha funksiyalar to'liq ishlaydi."
-                ),
-                reply_markup=kb,
-                parse_mode='Markdown'
-            )
-        except Exception:
-            pass
-
-
-# ---------------------- DM: Broadcast ----------------------
-async def track_private(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Har qanday PRIVATE chatdagi xabarni ko'rsak, u foydalanuvchini DBga upsert qilamiz."""
-    try:
-        await dm_upsert_user(update.effective_user)
-    except Exception as e:
-        log.warning(f"track_private upsert xatolik: {e}")
-
-async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """(OWNER & DM) Matnni barcha DM obunachilarga yuborish."""
-    if update.effective_chat.type != "private":
-        return await update.effective_message.reply_text("⛔ Bu buyruq faqat DM (shaxsiy chat)da ishlaydi.")
-    if not is_owner(update):
-        return await update.effective_message.reply_text("⛔ Bu buyruq faqat bot egasiga ruxsat etilgan.")
-    text = " ".join(context.args).strip()
-    if not text and update.effective_message.reply_to_message:
-        text = update.effective_message.reply_to_message.text_html or update.effective_message.reply_to_message.caption_html
-    if not text:
-        return await update.effective_message.reply_text("Foydalanish: /broadcast Yangilanish matni")
-
-    ids = await dm_all_ids()
-    total = len(ids); ok = 0; fail = 0
-    await update.effective_message.reply_text(f"📣 DM jo‘natish boshlandi. Jami foydalanuvchilar: {total}")
-    for cid in list(ids):
-        try:
-            await context.bot.send_message(cid, text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-            ok += 1
-            await asyncio.sleep(0.05)
-        except (Exception,) as e:
-            # drop forbidden/bad users
-            await dm_remove_user(cid)
-            fail += 1
-    await update.effective_message.reply_text(f"✅ Yuborildi: {ok} ta, ❌ xatolik: {fail} ta.")
-
-async def broadcastpost(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """(OWNER & DM) Reply qilingan postni barcha DM obunachilarga yuborish."""
-    if update.effective_chat.type != "private":
-        return await update.effective_message.reply_text("⛔ Bu buyruq faqat DM (shaxsiy chat)da ishlaydi.")
-    if not is_owner(update):
-        return await update.effective_message.reply_text("⛔ Bu buyruq faqat bot egasiga ruxsat etilgan.")
-    msg = update.effective_message.reply_to_message
-    if not msg:
-        return await update.effective_message.reply_text("Foydalanish: /broadcastpost — yubormoqchi bo‘lgan xabarga reply qiling.")
-
-    ids = await dm_all_ids()
-    total = len(ids); ok = 0; fail = 0
-    await update.effective_message.reply_text(f"📣 DM post tarqatish boshlandi. Jami foydalanuvchilar: {total}")
-    for cid in list(ids):
-        try:
-            await context.bot.copy_message(chat_id=cid, from_chat_id=msg.chat_id, message_id=msg.message_id)
-            ok += 1
-            await asyncio.sleep(0.05)
-        except (Exception,) as e:
-            await dm_remove_user(cid)
-            fail += 1
-    await update.effective_message.reply_text(f"✅ Yuborildi: {ok} ta, ❌ xatolik: {fail} ta.")
+    await q.edit_message_text(f"🎟 <code>{target_id}</code> foydalanuvchiga imtiyoz berildi.", parse_mode="HTML")
 
 
 # ---------------------- Setup ----------------------
@@ -1008,20 +407,9 @@ async def set_commands(app):
             BotCommand("start", "Bot haqida ma'lumot"),
             BotCommand("help", "Bot qo'llanmasi"),
             BotCommand("id", "Sizning ID’ingiz"),
-            BotCommand("count", "Siz nechta qo‘shgansiz"),
             BotCommand("top", "TOP 100 ro‘yxati"),
-            BotCommand("replycount", "(reply) foydalanuvchi nechta qo‘shganini ko‘rish"),
             BotCommand("majbur", "Majburiy odam limitini (3–30) o‘rnatish"),
             BotCommand("majburoff", "Majburiy qo‘shishni o‘chirish"),
-            BotCommand("cleangroup", "Hamma hisobini 0 qilish"),
-            BotCommand("cleanuser", "(reply) foydalanuvchi hisobini 0 qilish"),
-            BotCommand("ruxsat", "(reply) imtiyoz berish"),
-            BotCommand("kanal", "Majburiy kanalni sozlash"),
-            BotCommand("kanaloff", "Majburiy kanalni o‘chirish"),
-            BotCommand("tun", "Tun rejimini yoqish"),
-            BotCommand("tunoff", "Tun rejimini o‘chirish"),
-            BotCommand("broadcast", "Barcha DM foydalanuvchilarga matn yuborish (owner)"),
-            BotCommand("broadcastpost", "Barcha DM foydalanuvchilarga post-forward (owner)"),
         ],
         scope=BotCommandScopeAllPrivateChats()
     )
@@ -1030,52 +418,11 @@ async def post_init(app):
     await init_db(app)
     await set_commands(app)
 
-
 def main():
     start_web()
     app = ApplicationBuilder().token(TOKEN).build()
-
-    # Commands
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help))
-    app.add_handler(CommandHandler("id", id_berish))
-    app.add_handler(CommandHandler("tun", tun))
-    app.add_handler(CommandHandler("tunoff", tunoff))
-    app.add_handler(CommandHandler("ruxsat", ruxsat))
-    app.add_handler(CommandHandler("kanal", kanal))
-    app.add_handler(CommandHandler("kanaloff", kanaloff))
-    app.add_handler(CommandHandler("majbur", majbur))
-    app.add_handler(CommandHandler("majburoff", majburoff))
-    app.add_handler(CommandHandler("top", top_cmd))
-    app.add_handler(CommandHandler("cleangroup", cleangroup))
-    app.add_handler(CommandHandler("count", count_cmd))
-    app.add_handler(CommandHandler("replycount", replycount))
-    app.add_handler(CommandHandler("cleanuser", cleanuser))
-
-    # DM broadcast (owner only)
-    app.add_handler(CommandHandler("broadcast", broadcast))
-    app.add_handler(CommandHandler("broadcastpost", broadcastpost))
-
-    # Callbacks
-    app.add_handler(CallbackQueryHandler(on_set_limit, pattern=r"^set_limit:"))
-    app.add_handler(CallbackQueryHandler(kanal_callback, pattern=r"^kanal_azo$"))
-    app.add_handler(CallbackQueryHandler(on_check_added, pattern=r"^check_added(?::\d+)?$"))
-    app.add_handler(CallbackQueryHandler(on_grant_priv, pattern=r"^grant:"))
-    app.add_handler(CallbackQueryHandler(lambda u,c: u.callback_query.answer(""), pattern=r"^noop$"))
-
-    # Events & Filters
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, on_new_members))
-    media_filters = (filters.TEXT | filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.ANIMATION | filters.VOICE | filters.VIDEO_NOTE | filters.GAME)
-    app.add_handler(MessageHandler(filters.ChatType.PRIVATE, track_private), group=-3)
-    app.add_handler(MessageHandler(media_filters & (~filters.COMMAND), majbur_filter), group=-2)
-    app.add_handler(MessageHandler(media_filters & (~filters.COMMAND), reklama_va_soz_filtri), group=-1)
-
-    # Post-init hook
     app.post_init = post_init
-
     app.run_polling(allowed_updates=Update.ALL_TYPES)
-
 
 if __name__ == "__main__":
     main()
-
