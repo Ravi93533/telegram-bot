@@ -1066,6 +1066,9 @@ async def broadcastpost(update: Update, context: ContextTypes.DEFAULT_TYPE):
 _GROUP_SETTINGS_CACHE = {}  # chat_id -> (settings_dict, fetched_monotonic)
 _GROUP_SETTINGS_TTL_SEC = 20
 
+# In-memory fallback (DB bo'lmasa) — counts per (chat_id, user_id)
+_GROUP_COUNTS_MEM = defaultdict(lambda: defaultdict(int))
+
 def _default_group_settings():
     return {"tun": False, "kanal_username": None, "majbur_limit": 0}
 
@@ -1238,7 +1241,10 @@ async def clear_privs_db(chat_id: int):
 
 async def get_user_count_db(chat_id: int, user_id: int) -> int:
     if not DB_POOL:
-        return 0
+        try:
+            return int(_GROUP_COUNTS_MEM[chat_id].get(user_id, 0))
+        except Exception:
+            return 0
     try:
         async with DB_POOL.acquire() as con:
             v = await con.fetchval(
@@ -1251,6 +1257,10 @@ async def get_user_count_db(chat_id: int, user_id: int) -> int:
 
 async def inc_user_count_db(chat_id: int, user_id: int, delta: int = 1):
     if not DB_POOL:
+        try:
+            _GROUP_COUNTS_MEM[chat_id][user_id] = int(_GROUP_COUNTS_MEM[chat_id].get(user_id, 0)) + int(delta)
+        except Exception:
+            pass
         return
     try:
         async with DB_POOL.acquire() as con:
@@ -1269,6 +1279,10 @@ async def inc_user_count_db(chat_id: int, user_id: int, delta: int = 1):
 
 async def set_user_count_db(chat_id: int, user_id: int, cnt: int):
     if not DB_POOL:
+        try:
+            _GROUP_COUNTS_MEM[chat_id][user_id] = int(cnt)
+        except Exception:
+            pass
         return
     try:
         async with DB_POOL.acquire() as con:
@@ -1287,6 +1301,10 @@ async def set_user_count_db(chat_id: int, user_id: int, cnt: int):
 
 async def clear_group_counts_db(chat_id: int):
     if not DB_POOL:
+        try:
+            _GROUP_COUNTS_MEM.pop(chat_id, None)
+        except Exception:
+            pass
         return
     try:
         async with DB_POOL.acquire() as con:
@@ -1296,7 +1314,12 @@ async def clear_group_counts_db(chat_id: int):
 
 async def top_group_counts_db(chat_id: int, limit: int = 100):
     if not DB_POOL:
-        return []
+        try:
+            items = list(_GROUP_COUNTS_MEM.get(chat_id, {}).items())
+            items.sort(key=lambda x: (-int(x[1]), int(x[0])))
+            return [(int(uid), int(cnt)) for uid, cnt in items[: int(limit)]]
+        except Exception:
+            return []
     try:
         async with DB_POOL.acquire() as con:
             rows = await con.fetch(
