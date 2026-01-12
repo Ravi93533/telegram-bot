@@ -200,28 +200,6 @@ def _get_db_url() -> Optional[str]:
         or os.getenv("DB_URL")
     )
 
-def _ssl_for_db(dsn: str):
-    """Return asyncpg ssl= argument for given dsn.
-
-    Railway internal Postgres often presents a self-signed certificate chain.
-    For hosts ending with .railway.internal we disable SSL verification by
-    disabling SSL entirely (ssl=False), which is acceptable on Railway's
-    private network.
-    For other hosts we use a default SSL context (verification on), unless
-    DB_SSL_NO_VERIFY=1 is set.
-    """
-    try:
-        host = (urlparse(dsn).hostname or "").lower()
-    except Exception:
-        host = ""
-    if host.endswith(".railway.internal"):
-        return False  # no SSL on private Railway network
-    ctx = ssl.create_default_context()
-    if str(os.getenv("DB_SSL_NO_VERIFY", "")).strip() in ("1", "true", "True", "yes", "YES"):
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-    return ctx
-
 async def init_db(app=None):
     """Create asyncpg pool and ensure tables exist. Also migrate JSON -> DB once."""
     global DB_POOL
@@ -233,7 +211,8 @@ async def init_db(app=None):
         log.error("asyncpg o'rnatilmagan. requirements.txt ga 'asyncpg' qo'shing.")
         return
     # Railway/Render kabi PaaS larda Postgres ko'pincha SSL talab qiladi.
-    # SSL parametri hostga qarab tanlanadi (Railway internal uchun ssl=False).
+    # asyncpg uchun SSL konteksti beramiz. (Mahalliy DB ham odatda muammo qilmaydi.)
+    ssl_ctx = ssl.create_default_context()
     # Railway ba'zan `postgres://` beradi; moslik uchun sxemani normalizatsiya qilamiz.
     if db_url.startswith("postgres://"):
         db_url = "postgresql://" + db_url[len("postgres://"):]
@@ -256,7 +235,7 @@ async def init_db(app=None):
                 dsn=db_url,
                 min_size=1,
                 max_size=5,
-                ssl=_ssl_for_db(db_url),
+                ssl=(False if (urlparse(db_url).hostname or '').endswith('.railway.internal') else ssl_ctx),
                 timeout=30,
                 max_inactive_connection_lifetime=300,
             )
