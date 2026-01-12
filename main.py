@@ -263,6 +263,12 @@ async def init_db(app=None):
             );
             """
         )
+    # Ensure per-group tables exist
+    try:
+        await init_group_db()
+    except Exception as e:
+        log.warning("init_group_db xatolik: %s", e)
+
     # Migrate from JSON (best-effort, only if DB empty)
     try:
         if DB_POOL:
