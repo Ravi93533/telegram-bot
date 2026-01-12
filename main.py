@@ -1069,6 +1069,9 @@ _GROUP_SETTINGS_TTL_SEC = 20
 # In-memory fallback (DB bo'lmasa) — counts per (chat_id, user_id)
 _GROUP_COUNTS_MEM = defaultdict(lambda: defaultdict(int))
 
+
+# In-memory privileges cache per group (DB bo'lsa ham tezkor bypass uchun)
+_GROUP_PRIV_MEM = defaultdict(set)  # chat_id -> set(user_id)
 def _default_group_settings():
     return {"tun": False, "kanal_username": None, "majbur_limit": 0}
 
@@ -1206,19 +1209,39 @@ async def set_group_settings(chat_id: int, *, tun=None, kanal_username=None, maj
         log.warning(f"set_group_settings xatolik: {e}")
 
 async def group_has_priv(chat_id: int, user_id: int) -> bool:
+    # Tezkor cache
+    try:
+        if user_id in _GROUP_PRIV_MEM.get(chat_id, set()):
+            return True
+    except Exception:
+        pass
+
     if not DB_POOL:
-        return False
+        # DB yo'q bo'lsa ham cache ishlaydi
+        return user_id in _GROUP_PRIV_MEM.get(chat_id, set())
+
     try:
         async with DB_POOL.acquire() as con:
             v = await con.fetchval(
                 "SELECT 1 FROM group_privileges WHERE chat_id=$1 AND user_id=$2;",
                 chat_id, user_id
             )
-        return bool(v)
-    except Exception:
-        return False
+        ok = bool(v)
+        if ok:
+            _GROUP_PRIV_MEM[chat_id].add(user_id)
+        return ok
+    except Exception as e:
+        log.warning(f"group_has_priv xatolik: {e}")
+        # DB vaqtincha muammo qilsa ham cache'dan qaytamiz
+        return user_id in _GROUP_PRIV_MEM.get(chat_id, set())
 
 async def grant_priv_db(chat_id: int, user_id: int):
+    # Avval cache'ga yozamiz (DB kechiksa ham darhol ishlasin)
+    try:
+        _GROUP_PRIV_MEM[chat_id].add(user_id)
+    except Exception:
+        pass
+
     if not DB_POOL:
         return
     try:
@@ -1617,6 +1640,19 @@ async def on_grant_priv(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         return await q.edit_message_text("❌ Noto‘g‘ri ma'lumot.")
     await grant_priv_db(chat.id, target_id)
+    # Agar foydalanuvchi blokda bo'lsa — darhol blokdan chiqaramiz
+    try:
+        await clear_block_db(chat.id, target_id)
+    except Exception:
+        pass
+    try:
+        await context.bot.restrict_chat_member(
+            chat_id=chat.id,
+            user_id=target_id,
+            permissions=FULL_PERMS,
+        )
+    except Exception:
+        pass
     await q.edit_message_text(f"🎟 <code>{target_id}</code> foydalanuvchiga imtiyoz berildi. Endi u yozishi mumkin (shu guruhda).", parse_mode="HTML")
 
 # --------- Override Filters: reklama_va_soz_filtri / majbur_filter ----------
