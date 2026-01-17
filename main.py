@@ -780,7 +780,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         except:
             pass
         kb = [
-            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")],
+            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data=f"kanal_azo:{msg.from_user.id}")],
             [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
         ]
         await context.bot.send_message(
@@ -1178,23 +1178,36 @@ async def get_group_settings(chat_id: int) -> dict:
     _GROUP_SETTINGS_CACHE[chat_id] = (dict(s), now)
     return dict(s)
 
+# Sentinel: differenciate between "parameter not provided" vs explicit None (e.g., /kanaloff)
+_GROUP_SETTINGS_UNSET = object()
 
-async def set_group_settings(chat_id: int, *, tun=None, kanal_username=None, majbur_limit=None):
-    """Upsert group settings for chat_id."""
+async def set_group_settings(chat_id: int, *, tun=_GROUP_SETTINGS_UNSET, kanal_username=_GROUP_SETTINGS_UNSET, majbur_limit=_GROUP_SETTINGS_UNSET):
+    """Upsert group settings for chat_id.
+
+    Important:
+    - If a parameter is not provided (_GROUP_SETTINGS_UNSET), the existing value is preserved.
+    - If kanal_username=None is provided, it is stored as None (this is needed for /kanaloff).
+    """
     if not DB_POOL:
         # cache-only fallback
         cur = await get_group_settings(chat_id)
-        if tun is not None: cur["tun"] = bool(tun)
-        if kanal_username is not None: cur["kanal_username"] = kanal_username
-        if majbur_limit is not None: cur["majbur_limit"] = int(majbur_limit)
+        if tun is not _GROUP_SETTINGS_UNSET:
+            cur["tun"] = bool(tun)
+        if kanal_username is not _GROUP_SETTINGS_UNSET:
+            cur["kanal_username"] = kanal_username
+        if majbur_limit is not _GROUP_SETTINGS_UNSET:
+            cur["majbur_limit"] = int(majbur_limit)
         _GROUP_SETTINGS_CACHE[chat_id] = (cur, __import__("time").monotonic())
         return
 
     # Keep unspecified fields unchanged (read current first)
     cur = await get_group_settings(chat_id)
-    if tun is None: tun = cur["tun"]
-    if kanal_username is None: kanal_username = cur["kanal_username"]
-    if majbur_limit is None: majbur_limit = cur["majbur_limit"]
+    if tun is _GROUP_SETTINGS_UNSET:
+        tun = cur["tun"]
+    if kanal_username is _GROUP_SETTINGS_UNSET:
+        kanal_username = cur["kanal_username"]
+    if majbur_limit is _GROUP_SETTINGS_UNSET:
+        majbur_limit = cur["majbur_limit"]
 
     try:
         async with DB_POOL.acquire() as con:
@@ -1215,6 +1228,7 @@ async def set_group_settings(chat_id: int, *, tun=None, kanal_username=None, maj
         log.warning(f"set_group_settings xatolik: {e}")
 
 async def group_has_priv(chat_id: int, user_id: int) -> bool:
+
     # Tezkor cache
     try:
         if user_id in _GROUP_PRIV_MEM.get(chat_id, set()):
@@ -1567,13 +1581,45 @@ async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # --------- Override callbacks that depended on global settings ----------
 async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
-    await q.answer()
-    chat_id = q.message.chat.id
+    data = (q.data or "")
+    chat_id = q.message.chat.id if q.message else None
     user_id = q.from_user.id
+
+    # Button ownership check: only the warned user can press.
+    owner_id = None
+    if ":" in data:
+        try:
+            owner_id = int(data.split(":", 1)[1])
+        except Exception:
+            owner_id = None
+
+    # Old messages used callback_data="kanal_azo"; block them to prevent abuse.
+    if owner_id is None and data == "kanal_azo":
+        return await q.answer("Bu eski tugma. Iltimos yangi ogohlantirishni kuting.", show_alert=True)
+
+    if owner_id is not None and owner_id != user_id:
+        return await q.answer("Bu tugma siz uchun emas!", show_alert=True)
+
+    await q.answer()
+
+    if not chat_id:
+        return
+
     settings = await get_group_settings(chat_id)
     kanal_username = settings.get("kanal_username")
+
+    # If /kanaloff was used, kanal_username must be None -> allow writing.
     if not kanal_username:
-        return await q.edit_message_text("⚠️ Kanal sozlanmagan.")
+        try:
+            await context.bot.restrict_chat_member(
+                chat_id=chat_id,
+                user_id=user_id,
+                permissions=FULL_PERMS,
+            )
+        except Exception:
+            pass
+        return await q.edit_message_text("✅ Majburiy kanal talabi o‘chirilgan. Endi guruhda yozishingiz mumkin.")
+
     try:
         member = await context.bot.get_chat_member(kanal_username, user_id)
         if member.status in ("member", "administrator", "creator"):
@@ -1592,6 +1638,7 @@ async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("⚠️ Tekshirishda xatolik. Kanal username noto‘g‘ri yoki bot kanalga a’zo emas.")
 
 async def on_check_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     q = update.callback_query
     uid = q.from_user.id
     chat_id = q.message.chat.id
@@ -1701,7 +1748,7 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
         except Exception:
             pass
         kb = [
-            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data="kanal_azo")],
+            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data=f"kanal_azo:{msg.from_user.id}")],
             [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
         ]
         await context.bot.send_message(
@@ -1974,7 +2021,7 @@ def main():
 
     # Callbacks
     app.add_handler(CallbackQueryHandler(on_set_limit, pattern=r"^set_limit:"))
-    app.add_handler(CallbackQueryHandler(kanal_callback, pattern=r"^kanal_azo$"))
+    app.add_handler(CallbackQueryHandler(kanal_callback, pattern=r"^kanal_azo(?::\d+)?$"))
     app.add_handler(CallbackQueryHandler(on_check_added, pattern=r"^check_added(?::\d+)?$"))
     app.add_handler(CallbackQueryHandler(on_grant_priv, pattern=r"^grant:"))
     app.add_handler(CallbackQueryHandler(lambda u,c: u.callback_query.answer(""), pattern=r"^noop$"))
