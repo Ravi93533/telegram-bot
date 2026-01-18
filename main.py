@@ -6,6 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 import threading
 import os
 import re
+import html
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -493,7 +494,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Ботнинг ўзи ҳам хечқандай реклама ёки ҳаволалар <b>ТАРҚАТМАЙДИ</b> ⛔\n\n"
         "Бот командалари <b>қўлланмаси</b> 👉 /help\n\n"
         "Фақат ишлашим учун гуруҳингизга қўшиб, <b>ADMIN</b> <b>беришингиз</b> <b>керак</b> 🙂\n\n"
-        "Мурожаат ва саволлар бўлса 👉 @SOAuz_admin \n\n"
+        "Мурожаат ва саволлар бўлса 👉 @Devona0107 \n\n"
         "Сиздан фақатгина хомий каналимизга аъзолик 👉 <b>@SOAuz</b>",
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(kb)
@@ -1429,6 +1430,71 @@ async def kanal_tekshir(user_id: int, bot, kanal_username: str | None) -> bool:
         log.warning(f"kanal_tekshir xatolik: {e}")
         return False
 
+
+# --- Multi-channel /kanal helpers (per-group) ---
+
+def _normalize_channel_username(raw: str) -> str:
+    s = (raw or "").strip()
+    # accept https://t.me/<name> or t.me/<name>
+    if "t.me/" in s:
+        s = s.split("t.me/", 1)[1]
+        s = s.split("?", 1)[0]
+        s = s.split("/", 1)[0]
+    s = s.strip().rstrip(",;")
+    s = s.lstrip("@")
+    return "@" + s if s else ""
+
+def _parse_kanal_usernames(raw) -> list[str]:
+    # Supported formats in DB: None/empty, single "@ch", space/comma separated, JSON list string.
+    if not raw:
+        return []
+
+    vals: list[str] = []
+    if isinstance(raw, str):
+        s = raw.strip()
+        if not s:
+            return []
+        try:
+            j = __import__("json").loads(s)
+            if isinstance(j, list):
+                vals = [str(x) for x in j]
+            else:
+                vals = [s]
+        except Exception:
+            vals = s.replace(",", " ").split()
+    elif isinstance(raw, list):
+        vals = [str(x) for x in raw]
+    else:
+        vals = [str(raw)]
+
+    out: list[str] = []
+    seen: set[str] = set()
+    for v in vals:
+        ch = _normalize_channel_username(v)
+        if not ch or ch == "@":
+            continue
+        if ch not in seen:
+            out.append(ch)
+            seen.add(ch)
+    return out
+
+def _unique_preserve(seq: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for x in seq:
+        if x not in seen:
+            out.append(x)
+            seen.add(x)
+    return out
+
+async def _check_all_channels(user_id: int, bot, channels: list[str]) -> tuple[bool, list[str]]:
+    missing: list[str] = []
+    for ch in channels:
+        ok = await kanal_tekshir(user_id, bot, ch)
+        if not ok:
+            missing.append(ch)
+    return (len(missing) == 0, missing)
+
 # --------- Override commands: tun/tunoff/kanal/kanaloff/majbur/majburoff/ruxsat ----------
 async def tun(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
@@ -1448,12 +1514,25 @@ async def kanal(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return await update.effective_message.reply_text("⛔ Faqat adminlar.")
     chat_id = update.effective_chat.id
+
     if context.args:
-        kanal_username = context.args[0].strip()
-        await set_group_settings(chat_id, kanal_username=kanal_username)
-        await update.effective_message.reply_text(f"📢 Majburiy kanal: {kanal_username} (faqat shu guruh uchun)")
+        channels: list[str] = []
+        for a in context.args:
+            ch = _normalize_channel_username(a)
+            if ch and ch != "@":
+                channels.append(ch)
+        channels = _unique_preserve(channels)
+        if not channels:
+            return await update.effective_message.reply_text("Namuna: /kanal @kanal1 @kanal2")
+
+        # Store as JSON list (backward compatible: old single value still parses)
+        await set_group_settings(chat_id, kanal_username=__import__("json").dumps(channels, ensure_ascii=False))
+        chan_lines = "\n".join([f"{i}) {ch}" for i, ch in enumerate(channels, start=1)])
+        await update.effective_message.reply_text(
+            "📢 Majburiy kanallar (faqat shu guruh учун):\n" + chan_lines
+        )
     else:
-        await update.effective_message.reply_text("Namuna: /kanal @username")
+        await update.effective_message.reply_text("Namuna: /kanal @kanal1 @kanal2")
 
 async def kanaloff(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
@@ -1523,6 +1602,35 @@ async def ruxsat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(f"✅ <code>{uid}</code> foydalanuvchiga ruxsat berildi (shu guruhda).", parse_mode="HTML")
 
 # --------- Override stats commands to be per-group ----------
+def _user_label_from_user(u) -> str:
+    if getattr(u, "username", None):
+        return "@" + u.username
+    name = (getattr(u, "full_name", None) or "").strip()
+    if not name:
+        name = (getattr(u, "first_name", None) or "").strip()
+    return name or str(u.id)
+
+def _mention_userid_html(user_id: int, label: str) -> str:
+    return f'<a href="tg://user?id={user_id}">{html.escape(str(label))}</a>'
+
+def _mention_user_html(u) -> str:
+    return _mention_userid_html(u.id, _user_label_from_user(u))
+
+async def _mention_from_id(bot, chat_id: int, user_id: int, cache: dict[int, str]) -> str:
+    if user_id in cache:
+        return cache[user_id]
+    label = str(user_id)
+    try:
+        cm = await bot.get_chat_member(chat_id, user_id)
+        u = getattr(cm, "user", None)
+        if u is not None:
+            label = _user_label_from_user(u)
+    except Exception:
+        pass
+    mention = _mention_userid_html(user_id, label)
+    cache[user_id] = mention
+    return mention
+
 async def top_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
         return await update.effective_message.reply_text("⛔ Faqat adminlar.")
@@ -1531,8 +1639,10 @@ async def top_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not items:
         return await update.effective_message.reply_text("Hali hech kim odam qo‘shmagan.")
     lines = ["🏆 <b>Eng ko‘p odam qo‘shganlar</b> (TOP 100):"]
+    cache: dict[int, str] = {}
     for i, (uid, cnt) in enumerate(items, start=1):
-        lines.append(f"{i}. <code>{uid}</code> — {cnt} ta")
+        mention = await _mention_from_id(context.bot, chat_id, uid, cache)
+        lines.append(f"{i}. {mention} — <b>{cnt}</b> ta")
     await update.effective_message.reply_text("\n".join(lines), parse_mode="HTML")
 
 async def cleangroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1562,9 +1672,10 @@ async def replycount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not msg.reply_to_message:
         return await msg.reply_text("Iltimos, kimning hisobini ko‘rmoqchi bo‘lsangiz o‘sha xabarga reply qiling.")
     chat_id = update.effective_chat.id
-    uid = msg.reply_to_message.from_user.id
+    u = msg.reply_to_message.from_user
+    uid = u.id
     cnt = await get_user_count_db(chat_id, uid)
-    await msg.reply_text(f"👤 <code>{uid}</code> {cnt} ta odam qo‘shgan (shu guruhda).", parse_mode="HTML")
+    await msg.reply_text(f"👤 {_mention_user_html(u)} — <b>{cnt}</b> ta odam qo‘shgan (shu guruhda).", parse_mode="HTML")
 
 async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await is_admin(update):
@@ -1573,10 +1684,10 @@ async def cleanuser(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not msg.reply_to_message:
         return await msg.reply_text("Iltimos, kimni 0 qilmoqchi bo‘lsangiz o‘sha foydalanuvchi xabariga reply qiling.")
     chat_id = update.effective_chat.id
-    uid = msg.reply_to_message.from_user.id
+    u = msg.reply_to_message.from_user
+    uid = u.id
     await set_user_count_db(chat_id, uid, 0)
-    # imtiyozni ham olib tashlamaymiz; admin xohlasa alohida qilamiz. Hozircha qoldiramiz.
-    await msg.reply_text(f"🗑 <code>{uid}</code> foydalanuvchi hisobi 0 qilindi (shu guruhda).", parse_mode="HTML")
+    await msg.reply_text(f"🗑 {_mention_user_html(u)} foydalanuvchi hisobi 0 qilindi (shu guruhda).", parse_mode="HTML")
 
 # --------- Override callbacks that depended on global settings ----------
 async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1600,42 +1711,32 @@ async def kanal_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if owner_id is not None and owner_id != user_id:
         return await q.answer("Bu tugma siz uchun emas!", show_alert=True)
 
-    await q.answer()
-
     if not chat_id:
-        return
+        return await q.answer()
 
     settings = await get_group_settings(chat_id)
-    kanal_username = settings.get("kanal_username")
+    kanal_raw = settings.get("kanal_username")
+    kanal_list = _parse_kanal_usernames(kanal_raw)
 
-    # If /kanaloff was used, kanal_username must be None -> allow writing.
-    if not kanal_username:
+    # If /kanaloff was used, allow writing.
+    if not kanal_list:
+        await q.answer()
         try:
-            await context.bot.restrict_chat_member(
-                chat_id=chat_id,
-                user_id=user_id,
-                permissions=FULL_PERMS,
-            )
+            await context.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=FULL_PERMS)
         except Exception:
             pass
         return await q.edit_message_text("✅ Majburiy kanal talabi o‘chirilgan. Endi guruhda yozishingiz mumkin.")
 
+    ok_all, _missing = await _check_all_channels(user_id, context.bot, kanal_list)
+    if not ok_all:
+        return await q.answer("❌ Hali barcha kanalga a’zo emassiz", show_alert=True)
+
+    await q.answer()
     try:
-        member = await context.bot.get_chat_member(kanal_username, user_id)
-        if member.status in ("member", "administrator", "creator"):
-            try:
-                await context.bot.restrict_chat_member(
-                    chat_id=chat_id,
-                    user_id=user_id,
-                    permissions=FULL_PERMS,
-                )
-            except Exception:
-                pass
-            await q.edit_message_text("✅ A’zo bo‘lganingiz tasdiqlandi. Endi guruhda yozishingiz mumkin.")
-        else:
-            await q.edit_message_text("❌ Hali kanalga a’zo emassiz.")
+        await context.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id, permissions=FULL_PERMS)
     except Exception:
-        await q.edit_message_text("⚠️ Tekshirishda xatolik. Kanal username noto‘g‘ri yoki bot kanalga a’zo emas.")
+        pass
+    return await q.edit_message_text("✅ A’zo bo‘lganingiz tasdiqlandi. Endi guruhda yozishingiz mumkin.")
 
 async def on_check_added(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -1739,25 +1840,30 @@ async def reklama_va_soz_filtri(update: Update, context: ContextTypes.DEFAULT_TY
             pass
         return
 
-    kanal_username = settings.get("kanal_username")
+    kanal_raw = settings.get("kanal_username")
+    kanal_list = _parse_kanal_usernames(kanal_raw)
 
-    # Kanal a'zoligi (shu guruh uchun)
-    if not await kanal_tekshir(msg.from_user.id, context.bot, kanal_username):
-        try:
-            await msg.delete()
-        except Exception:
-            pass
-        kb = [
-            [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data=f"kanal_azo:{msg.from_user.id}")],
-            [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
-        ]
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=f"⚠️ {msg.from_user.mention_html()}, siz {kanal_username} kanalga a’zo emassiz!",
-            reply_markup=InlineKeyboardMarkup(kb),
-            parse_mode="HTML"
-        )
-        return
+    # Kanal a'zoligi (shu guruh uchun) - ko'p kanalli
+    if kanal_list:
+        ok_all, _missing = await _check_all_channels(msg.from_user.id, context.bot, kanal_list)
+        if not ok_all:
+            try:
+                await msg.delete()
+            except Exception:
+                pass
+            kb = [
+                [InlineKeyboardButton("✅ Men a’zo bo‘ldim", callback_data=f"kanal_azo:{msg.from_user.id}")],
+                [InlineKeyboardButton("➕ Guruhga qo‘shish", url=admin_add_link(context.bot.username))]
+            ]
+            user_label = ("@" + msg.from_user.username) if getattr(msg.from_user, "username", None) else (msg.from_user.first_name or "Foydalanuvchi")
+            chan_lines = "\n".join([f"{i}) {ch}" for i, ch in enumerate(kanal_list, start=1)])
+            warn_text = f"⚠️ {user_label} guruhda yozish uchun shu kanallarga a'zo bo'ling:\n{chan_lines}"
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=warn_text,
+                reply_markup=InlineKeyboardMarkup(kb),
+            )
+            return
 
     # Quyidagi qism — eski logikangiz (reklama/ssilka/uyatli sozlar) o'zgarishsiz:
     text = msg.text or msg.caption or ""
@@ -2041,4 +2147,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
