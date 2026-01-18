@@ -2055,6 +2055,16 @@ async def on_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception:
         pass
 
+# --------- Leave handler: delete “user left / removed” service messages ----------
+async def on_left_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = update.effective_message
+    if not msg:
+        return
+    try:
+        await msg.delete()
+    except Exception:
+        pass
+
 # --------- Override post_init to also init group tables ----------
 async def post_init(app):
     await init_db(app)
@@ -2134,6 +2144,7 @@ def main():
 
     # Events & Filters
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, on_new_members))
+    app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, on_left_member))
     media_filters = (filters.TEXT | filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.ANIMATION | filters.VOICE | filters.VIDEO_NOTE | filters.GAME)
     app.add_handler(MessageHandler(filters.ChatType.PRIVATE, track_private), group=-3)
     app.add_handler(MessageHandler(media_filters & (~filters.COMMAND), majbur_filter), group=-2)
