@@ -177,6 +177,9 @@ UYATLI_SOZLAR = {"am", "ammisan", "ammislar", "ammislar?", "ammisizlar", "ammisi
 "скишамизми?", "сикишаман", "сикишамиз", "скей" "сикиш", "сикишиш", "скай", "соска", "сука", "сукалар", "ташак", "ташаклар", "ташақ", "ташақлар", "тошоқ", "тошоқлар", "тошок", "хуй", "хурамилар", "хуй",
 "хуйна", "хароми", "хорамилар", "хороми", "хоромилар", "ғар"}
 
+# Compatibility alias: some versions use BAD_WORDS in filters
+BAD_WORDS = UYATLI_SOZLAR
+
 # Game/inline reklama kalit so'zlar/domenlar
 SUSPECT_KEYWORDS = {"open game", "play", "играть", "открыть игру", "game", "cattea", "gamee", "hamster", "notcoin", "tap to earn", "earn", "clicker"}
 SUSPECT_DOMAINS = {"cattea", "gamee", "hamster", "notcoin", "tgme", "t.me/gamee", "textra.fun", "ton"}
@@ -229,23 +232,72 @@ async def init_db(app=None):
         pass
     # Ba'zi PaaS/DB (ayniqsa Render free) birinchi ulanishda connection'ni yopib yuborishi mumkin.
     # Shuning uchun retry/backoff bilan pool ochamiz.
+
     DB_POOL = None
+
+    # SSL varianti: default holatda SSL bilan urinib ko'ramiz.
+    # Agar DB SSL'ni qo'llamasligi aniq bo'lsa, Render env ga: PG_SSL=disable deb qo'ying.
+    # Agar sertifikat tekshiruvini o'chirish kerak bo'lsa (tavsiya etilmaydi): PG_SSL=noverify
+    pg_ssl_mode = (os.getenv("PG_SSL") or "").strip().lower()
+    force_no_ssl = pg_ssl_mode in ("disable", "off", "0", "false")
+    insecure_noverify = pg_ssl_mode in ("noverify", "insecure", "nocert")
+
+    ssl_variants = []
+    if force_no_ssl:
+        ssl_variants = [False]
+    else:
+        if insecure_noverify:
+            _ctx_nv = ssl.create_default_context()
+            _ctx_nv.check_hostname = False
+            _ctx_nv.verify_mode = ssl.CERT_NONE
+            ssl_variants = [_ctx_nv, ssl_ctx, True, False]
+        else:
+            ssl_variants = [ssl_ctx, True, False]
+
+    # Ba'zi PaaS/DB birinchi ulanish(lar)da connection'ni yopib yuborishi mumkin.
+    # Shuning uchun retry/backoff bilan pool ochamiz; pgbouncer holatlari uchun statement cache'ni o'chiramiz.
     for attempt in range(1, 6):
-        try:
-            DB_POOL = await asyncpg.create_pool(
-                dsn=db_url,
-                min_size=1,
-                max_size=5,
-                ssl=(False if (urlparse(db_url).hostname or '').endswith('.railway.internal') else ssl_ctx),
-                timeout=30,
-                max_inactive_connection_lifetime=300,
-            )
-            log.info("Postgres DB_POOL ochildi (attempt=%s).", attempt)
+        last_err = None
+        for ssl_arg in ssl_variants:
+            try:
+                # Railway internal hostlarda SSL ko'pincha ishlatilmaydi
+                host = (urlparse(db_url).hostname or "")
+                ssl_eff = (False if host.endswith(".railway.internal") else ssl_arg)
+
+                DB_POOL = await asyncpg.create_pool(
+                    dsn=db_url,
+                    min_size=1,
+                    max_size=5,
+                    ssl=ssl_eff,
+                    timeout=30,
+                    command_timeout=30,
+                    max_inactive_connection_lifetime=60,
+                    max_queries=5000,
+                    statement_cache_size=0,
+                    server_settings={"application_name": "tg-clean-bot"},
+                )
+                # Smoke-test
+                async with DB_POOL.acquire() as con:
+                    await con.execute("SELECT 1;")
+
+                log.info("Postgres DB_POOL ochildi (attempt=%s).", attempt)
+                last_err = None
+                break
+            except Exception as e:
+                last_err = e
+                try:
+                    if DB_POOL:
+                        await DB_POOL.close()
+                except Exception:
+                    pass
+                DB_POOL = None
+                continue
+
+        if DB_POOL is not None:
             break
-        except Exception as e:
-            log.warning("Postgres ulanish xatosi (attempt=%s/5): %r", attempt, e)
-            # exponential backoff: 1,2,4,8,16 (max 16s)
-            await asyncio.sleep(min(2 ** (attempt - 1), 16))
+
+        log.warning("Postgres ulanish xatosi (attempt=%s/5): %r", attempt, last_err)
+        await asyncio.sleep(min(2 ** (attempt - 1), 16))
     if DB_POOL is None:
         log.error("Postgres'ga ulanib bo'lmadi. DB funksiyalar vaqtincha o'chadi; bot ishlashda davom etadi.")
         return
