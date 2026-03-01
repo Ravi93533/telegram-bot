@@ -6,7 +6,13 @@ import zipfile
 import logging
 import tempfile
 import subprocess
-from typing import Dict, List
+import asyncio
+from typing import Dict, List, Optional
+
+try:
+    import asyncpg
+except Exception:
+    asyncpg = None
 
 from dotenv import load_dotenv
 from PIL import Image
@@ -27,6 +33,13 @@ from telegram.ext import (
 load_dotenv()
 BOT_TOKEN = (os.getenv("BOT_TOKEN") or "").strip()
 ADMIN_IDS_RAW = (os.getenv("ADMIN_IDS") or "").strip()
+DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
+DB_SSL = (os.getenv("DB_SSL") or "1").strip().lower()
+DB_MAX_POOL_RAW = (os.getenv("DB_MAX_POOL") or "5").strip()
+try:
+    DB_MAX_POOL = max(1, int(DB_MAX_POOL_RAW))
+except Exception:
+    DB_MAX_POOL = 5
 
 # Footer shown under each converted file
 BOT_FOOTER = "🤖 @photos_converter_bot"
@@ -51,6 +64,103 @@ PENDING_IMG_CONV: Dict[int, Dict[str, str]] = {}
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger("converter-bot")
+
+# ---------------------- Database (Supabase Postgres) ----------------------
+# If DATABASE_URL is set, the bot will store user ids in Postgres instead of local data/users.json.
+DB_POOL: Optional["asyncpg.pool.Pool"] = None
+_DB_READY = False
+_DB_LOCK = asyncio.Lock()
+
+def _db_enabled() -> bool:
+    return bool(DATABASE_URL)
+
+def _db_use_ssl() -> bool:
+    # Supabase requires SSL for external connections.
+    return DB_SSL not in ("0", "false", "no", "off", "disable")
+
+def _is_transaction_pooler_url(dsn: str) -> bool:
+    # Supabase transaction pooler commonly uses port 6543.
+    return ":6543" in (dsn or "")
+
+async def _ensure_db() -> None:
+    """Lazy-init DB pool inside the running event loop."""
+    global DB_POOL, _DB_READY
+    if not _db_enabled():
+        return
+    if asyncpg is None:
+        raise RuntimeError("asyncpg paketi o‘rnatilmagan. requirements.txt ga asyncpg==0.30.0 qo‘shing.")
+    async with _DB_LOCK:
+        if DB_POOL is None:
+            ssl = True if _db_use_ssl() else None
+            # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
+            stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
+            DB_POOL = await asyncpg.create_pool(
+                dsn=DATABASE_URL,
+                min_size=1,
+                max_size=DB_MAX_POOL,
+                ssl=ssl,
+                command_timeout=60,
+                statement_cache_size=stmt_cache,
+            )
+
+        if not _DB_READY:
+            async with DB_POOL.acquire() as conn:
+                await conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS public.users (
+                        user_id BIGINT PRIMARY KEY,
+                        lang TEXT NOT NULL DEFAULT 'uz',
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                    );
+                    """
+                )
+            _DB_READY = True
+
+
+async def load_users() -> List[int]:
+    """Return list of user_ids who pressed /start (from DB if enabled, else from users.json)."""
+    if _db_enabled():
+        await _ensure_db()
+        assert DB_POOL is not None
+        async with DB_POOL.acquire() as conn:
+            rows = await conn.fetch("SELECT user_id FROM public.users ORDER BY user_id;")
+        return [int(r["user_id"]) for r in rows]
+    # Fallback: local JSON
+    return load_users_file()
+
+
+async def add_user(user_id: int, context: ContextTypes.DEFAULT_TYPE | None = None) -> None:
+    """Upsert user into DB (or users.json fallback)."""
+    if _db_enabled():
+        await _ensure_db()
+        assert DB_POOL is not None
+        lang = None
+        try:
+            if context is not None:
+                lang = (context.user_data or {}).get("lang")
+        except Exception:
+            lang = None
+        if lang not in ("uz", "ru"):
+            lang = None
+        async with DB_POOL.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO public.users (user_id, lang)
+                VALUES ($1, COALESCE($2, 'uz'))
+                ON CONFLICT (user_id)
+                DO UPDATE SET
+                    lang = COALESCE(EXCLUDED.lang, public.users.lang),
+                    updated_at = now();
+                """,
+                int(user_id),
+                lang,
+            )
+        return
+
+    # Fallback: local JSON
+    add_user_file(user_id)
+
 
 # ---------------------- Language helpers ----------------------
 def get_lang(context: ContextTypes.DEFAULT_TYPE) -> str:
@@ -117,7 +227,7 @@ def ensure_data_dir():
     os.makedirs(DATA_DIR, exist_ok=True)
 
 
-def load_users() -> List[int]:
+def load_users_file() -> List[int]:
     ensure_data_dir()
     if not os.path.exists(USERS_FILE):
         return []
@@ -131,7 +241,7 @@ def load_users() -> List[int]:
     return []
 
 
-def save_users(users: List[int]) -> None:
+def save_users_file(users: List[int]) -> None:
     ensure_data_dir()
     users = sorted(set(int(x) for x in users if str(x).isdigit()))
     tmp = USERS_FILE + ".tmp"
@@ -140,11 +250,11 @@ def save_users(users: List[int]) -> None:
     os.replace(tmp, USERS_FILE)
 
 
-def add_user(user_id: int) -> None:
-    users = load_users()
+def add_user_file(user_id: int) -> None:
+    users = load_users_file()
     if user_id not in users:
         users.append(user_id)
-        save_users(users)
+        save_users_file(users)
 
 
 def is_admin(user_id: int) -> bool:
@@ -229,7 +339,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     if not user or not update.message:
         return
-    add_user(user.id)
+    await add_user(user.id, context)
 
     # Ask for language on every /start (user can reselect anytime)
     await update.message.reply_text(
@@ -275,7 +385,7 @@ async def cmd_broadcast_post(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     msg = m.group(1).strip()
-    users = load_users()
+    users = await load_users()
     if not users:
         await update.message.reply_text("Пока нет пользователей, которые нажали /start." if lang == "ru" else "Hali start bosgan foydalanuvchilar yo‘q.")
         return
@@ -311,7 +421,7 @@ async def cmd_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await msg.reply_text("Использование: /broadcast текст" if lang == "ru" else "Foydalanish: /broadcast faqat tekst xabar")
         return
     text_msg = parts[1]
-    users = load_users()
+    users = await load_users()
     if not users:
         await msg.reply_text("Пока нет пользователей, которые нажали /start." if lang == "ru" else "Hali start bosgan foydalanuvchilar yo‘q.")
         return
@@ -339,7 +449,7 @@ async def cmd_broadcastpost(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not msg.reply_to_message:
         await msg.reply_text("Использование: ответьте на пост и отправьте /broadcastpost." if lang == "ru" else "Foydalanish: postga reply qilib /broadcastpost yozing.")
         return
-    users = load_users()
+    users = await load_users()
     if not users:
         await msg.reply_text("Пока нет пользователей, которые нажали /start." if lang == "ru" else "Hali start bosgan foydalanuvchilar yo‘q.")
         return
@@ -363,7 +473,7 @@ async def on_pdf(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not user or not msg or not msg.document:
         return
 
-    add_user(user.id)
+    await add_user(user.id, context)
     lang = get_lang(context)
 
     doc = msg.document
@@ -385,7 +495,7 @@ async def on_word(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not user or not msg or not msg.document:
         return
 
-    add_user(user.id)
+    await add_user(user.id, context)
     lang = get_lang(context)
 
     doc = msg.document
@@ -410,7 +520,7 @@ async def on_image_doc_convert(update: Update, context: ContextTypes.DEFAULT_TYP
     if not user or not msg or not msg.document:
         return
 
-    add_user(user.id)
+    await add_user(user.id, context)
     lang = get_lang(context)
 
     doc = msg.document
@@ -445,7 +555,7 @@ async def on_image(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not user or not msg:
         return
 
-    add_user(user.id)
+    await add_user(user.id, context)
     lang = get_lang(context)
 
     src_ext = "jpg"
@@ -536,7 +646,7 @@ async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         if lang not in ("uz", "ru"):
             lang = "uz"
         context.user_data["lang"] = lang
-        add_user(user.id)
+        await add_user(user.id, context)
 
         greeting = _greeting_ru() if lang == "ru" else _greeting_uz()
         try:
