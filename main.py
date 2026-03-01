@@ -7,6 +7,13 @@ import logging
 import tempfile
 import subprocess
 import asyncio
+import ssl
+
+try:
+    import certifi
+except Exception:
+    certifi = None
+
 from typing import Dict, List, Optional
 
 try:
@@ -91,14 +98,22 @@ async def _ensure_db() -> None:
         raise RuntimeError("asyncpg paketi o‘rnatilmagan. requirements.txt ga asyncpg==0.30.0 qo‘shing.")
     async with _DB_LOCK:
         if DB_POOL is None:
-            ssl = True if _db_use_ssl() else None
+            ssl_param = None
+            if _db_use_ssl():
+                # Use certifi CA bundle to avoid SSL verification issues on some hosts.
+                if certifi is not None:
+                    ssl_param = ssl.create_default_context(cafile=certifi.where())
+                else:
+                    # Fallback to system CA bundle.
+                    ssl_param = True
+
             # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
             stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
             DB_POOL = await asyncpg.create_pool(
                 dsn=DATABASE_URL,
                 min_size=1,
                 max_size=DB_MAX_POOL,
-                ssl=ssl,
+                ssl=ssl_param,
                 command_timeout=60,
                 statement_cache_size=stmt_cache,
             )
