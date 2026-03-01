@@ -42,6 +42,7 @@ BOT_TOKEN = (os.getenv("BOT_TOKEN") or "").strip()
 ADMIN_IDS_RAW = (os.getenv("ADMIN_IDS") or "").strip()
 DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
 DB_SSL = (os.getenv("DB_SSL") or "1").strip().lower()
+DB_SSL_INSECURE = (os.getenv("DB_SSL_INSECURE") or "0").strip().lower()
 DB_MAX_POOL_RAW = (os.getenv("DB_MAX_POOL") or "5").strip()
 try:
     DB_MAX_POOL = max(1, int(DB_MAX_POOL_RAW))
@@ -85,6 +86,11 @@ def _db_use_ssl() -> bool:
     # Supabase requires SSL for external connections.
     return DB_SSL not in ("0", "false", "no", "off", "disable")
 
+
+def _db_insecure() -> bool:
+    # If set, disables certificate verification (NOT recommended). Useful only for debugging.
+    return DB_SSL_INSECURE in ("1", "true", "yes", "on")
+
 def _is_transaction_pooler_url(dsn: str) -> bool:
     # Supabase transaction pooler commonly uses port 6543.
     return ":6543" in (dsn or "")
@@ -100,15 +106,22 @@ async def _ensure_db() -> None:
         if DB_POOL is None:
             ssl_param = None
             if _db_use_ssl():
-                # Use certifi CA bundle to avoid SSL verification issues on some hosts.
+                # Build an SSL context that trusts BOTH the system CAs (if present) and certifi's bundle.
+                # Some hosts inject a custom root CA; using only certifi can break verification.
+                ssl_ctx = ssl.create_default_context()
                 if certifi is not None:
-                    ssl_param = ssl.create_default_context(cafile=certifi.where())
-                else:
-                    # Fallback to system CA bundle.
-                    ssl_param = True
+                    try:
+                        ssl_ctx.load_verify_locations(cafile=certifi.where())
+                    except Exception:
+                        pass
+                if _db_insecure():
+                    ssl_ctx.check_hostname = False
+                    ssl_ctx.verify_mode = ssl.CERT_NONE
+                ssl_param = ssl_ctx
 
             # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
-            stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
+            stmt_cache = 0 if _is_transaction_pooler_url\(DATABASE_URL\) else 100
+            _log_db_target(DATABASE_URL)
             DB_POOL = await asyncpg.create_pool(
                 dsn=DATABASE_URL,
                 min_size=1,
