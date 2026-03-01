@@ -172,14 +172,43 @@ async def _ensure_db() -> None:
             # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
             stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
             _log_db_target(DATABASE_URL)
-            DB_POOL = await asyncpg.create_pool(
-                dsn=DATABASE_URL,
-                min_size=1,
-                max_size=DB_MAX_POOL,
-                ssl=ssl_param,
-                command_timeout=60,
-                statement_cache_size=stmt_cache,
-            )
+            try:
+                DB_POOL = await asyncpg.create_pool(
+                    dsn=DATABASE_URL,
+                    min_size=1,
+                    max_size=DB_MAX_POOL,
+                    ssl=ssl_param,
+                    command_timeout=60,
+                    statement_cache_size=stmt_cache,
+                )
+            except ssl.SSLCertVerificationError as e:
+                # Some hosts (or proxies) present a cert chain that can't be validated with the available CA store.
+                # As a pragmatic fallback (still encrypted, but without verification), retry with CERT_NONE.
+                log.warning(
+                    "DB SSL sertifikat tekshiruvi muvaffaqiyatsiz: %s. Insecure TLS (verify o‘chirilgan) bilan qayta urinayapman. "
+                    "Xavfsiz variant uchun CA muammosini hal qiling yoki DB_SSL_INSECURE=1 ni o‘zingiz boshqaring.",
+                    e,
+                )
+                ssl_param2 = None
+                if _db_use_ssl():
+                    ssl_ctx2 = ssl.create_default_context()
+                    if certifi is not None:
+                        try:
+                            ssl_ctx2.load_verify_locations(cafile=certifi.where())
+                        except Exception:
+                            pass
+                    ssl_ctx2.check_hostname = False
+                    ssl_ctx2.verify_mode = ssl.CERT_NONE
+                    ssl_param2 = ssl_ctx2
+            
+                DB_POOL = await asyncpg.create_pool(
+                    dsn=DATABASE_URL,
+                    min_size=1,
+                    max_size=DB_MAX_POOL,
+                    ssl=ssl_param2,
+                    command_timeout=60,
+                    statement_cache_size=stmt_cache,
+                )
 
         if not _DB_READY:
             async with DB_POOL.acquire() as conn:
