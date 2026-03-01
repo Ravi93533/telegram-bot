@@ -135,7 +135,7 @@ async def _ensure_db() -> None:
                 ssl_param = ssl_ctx
 
             # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
-            stmt_cache = 0 if _is_transaction_pooler_url\(DATABASE_URL\) else 100
+            stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
             _log_db_target(DATABASE_URL)
             DB_POOL = await asyncpg.create_pool(
                 dsn=DATABASE_URL,
