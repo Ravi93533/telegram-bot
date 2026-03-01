@@ -8,6 +8,8 @@ import tempfile
 import subprocess
 import asyncio
 import ssl
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 try:
     import certifi
@@ -109,6 +111,39 @@ def _log_db_target(dsn: str) -> None:
             log.info("DB target: user=%s host=%s port=%s db=%s", user, host, port, dbname)
     except Exception:
         pass
+
+
+def _start_health_server_if_port_set() -> None:
+    """Render Web Service needs an open port. If PORT is set, bind a tiny HTTP server."""
+    port_s = (os.getenv("PORT") or "").strip()
+    if not port_s:
+        return
+    try:
+        port = int(port_s)
+    except Exception:
+        return
+
+    class _Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+        # silence default request logs
+        def log_message(self, format, *args):
+            return
+
+    def _serve():
+        try:
+            httpd = HTTPServer(("0.0.0.0", port), _Handler)
+            log.info("Health server listening on 0.0.0.0:%s", port)
+            httpd.serve_forever()
+        except Exception as e:
+            log.warning("Health server failed: %s", e)
+
+    threading.Thread(target=_serve, daemon=True).start()
+
 
 async def _ensure_db() -> None:
     """Lazy-init DB pool inside the running event loop."""
@@ -1044,6 +1079,8 @@ async def on_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 def main() -> None:
     if not BOT_TOKEN:
         raise SystemExit("BOT_TOKEN not set. Create .env from .env.example and set BOT_TOKEN.")
+
+    _start_health_server_if_port_set()
 
     app = Application.builder().token(BOT_TOKEN).build()
 
