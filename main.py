@@ -15,6 +15,7 @@ except Exception:
     certifi = None
 
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
 try:
     import asyncpg
@@ -95,6 +96,20 @@ def _is_transaction_pooler_url(dsn: str) -> bool:
     # Supabase transaction pooler commonly uses port 6543.
     return ":6543" in (dsn or "")
 
+
+def _log_db_target(dsn: str) -> None:
+    """Log DB host/port/user safely (without password)."""
+    try:
+        u = urlparse(dsn)
+        user = u.username or ""
+        host = u.hostname or ""
+        port = u.port or 0
+        dbname = (u.path or "").lstrip("/")
+        if host:
+            log.info("DB target: user=%s host=%s port=%s db=%s", user, host, port, dbname)
+    except Exception:
+        pass
+
 async def _ensure_db() -> None:
     """Lazy-init DB pool inside the running event loop."""
     global DB_POOL, _DB_READY
@@ -120,7 +135,7 @@ async def _ensure_db() -> None:
                 ssl_param = ssl_ctx
 
             # If using transaction pooler, prepared statements may break. Turn off statement cache in that case.
-            stmt_cache = 0 if _is_transaction_pooler_url(DATABASE_URL) else 100
+            stmt_cache = 0 if _is_transaction_pooler_url\(DATABASE_URL\) else 100
             _log_db_target(DATABASE_URL)
             DB_POOL = await asyncpg.create_pool(
                 dsn=DATABASE_URL,
